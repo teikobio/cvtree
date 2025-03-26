@@ -218,11 +218,11 @@ def main():
         
         # Color mapping for CV quality
         color_map = {
-            "Excellent": "#00FF00",  # Green
-            "Good": "#90EE90",       # Light green
-            "Fair": "#FFA500",       # Orange
-            "Poor": "#FF4500",       # Red-Orange
-            "Very Poor": "#FF0000"   # Red
+            "Excellent (≤1%)": "#00FF00",  # Green
+            "Good (1-5%)": "#90EE90",       # Light green
+            "Fair (5-10%)": "#FFA500",      # Orange
+            "Poor (10-20%)": "#FF4500",     # Red-Orange
+            "Very Poor (>20%)": "#FF0000"   # Red
         }
         
         # Build nodes and edges
