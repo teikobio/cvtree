@@ -5,3 +5,4 @@ plotly>=5.13.0
 networkx>=3.0
 matplotlib>=3.7.0
 scipy>=1.11.0
+python-igraph>=0.10.0

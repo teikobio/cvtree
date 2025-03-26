@@ -226,131 +226,125 @@ def main():
         }
         
         # Build nodes and edges
+        root_node = db.get_root_node()
+        node_to_index = {root_node: 0}  # Map node names to indices
+        current_index = 1
+        
+        # First pass to collect nodes and create index mapping
         for cell_type, count in cell_counts.items():
+            if cell_type not in node_to_index:
+                node_to_index[cell_type] = current_index
+                current_index += 1
             nodes.append(cell_type)
-            cv = calculate_cv(count)
-            cv_quality = categorize_cv(cv)
-            node_labels[cell_type] = f"{cell_type}<br>{count:,} cells<br>CV: {cv:.2f}%"
-            node_colors.append(color_map[cv_quality])
             
             parent = db.get_parent(cell_type)
             if parent:
-                edges.append((parent, cell_type))
+                edges.append((node_to_index[parent], node_to_index[cell_type]))
         
-        # Create the tree layout using plotly
+        # Create igraph Graph
+        import igraph as ig
+        G = ig.Graph(directed=True)
+        G.add_vertices(len(nodes))
+        G.add_edges(edges)
+        
+        # Get tree layout
+        layout = G.layout('rt')  # rt = Reingold-Tilford tree layout
+        
+        # Convert layout to position dict
+        position = {k: layout[k] for k in range(len(nodes))}
+        
+        # Calculate Y range for inversion
+        Y = [layout[k][1] for k in range(len(nodes))]
+        M = max(Y)
+        
+        # Prepare node positions
+        Xn = [position[k][0] for k in range(len(nodes))]
+        Yn = [2*M-position[k][1] for k in range(len(nodes))]
+        
+        # Prepare edge positions
+        Xe = []
+        Ye = []
+        for edge in edges:
+            Xe += [position[edge[0]][0], position[edge[1]][0], None]
+            Ye += [2*M-position[edge[0]][1], 2*M-position[edge[1]][1], None]
+        
+        # Create figure
         fig = go.Figure()
         
-        # Create a networkx graph for layout calculation
-        G = nx.DiGraph()  # Using DiGraph for directed edges to maintain hierarchy
-        G.add_edges_from(edges)
-        
-        # Get initial layout
-        pos = nx.kamada_kawai_layout(G)
-        
-        # Get hierarchy levels and organize nodes by level
-        root_node = db.get_root_node()
-        depths = nx.shortest_path_length(G, root_node)
-        max_depth = max(depths.values())
-        
-        # Group nodes by their depth
-        nodes_by_depth = {}
-        for node, depth in depths.items():
-            if depth not in nodes_by_depth:
-                nodes_by_depth[depth] = []
-            nodes_by_depth[depth].append(node)
-        
-        # Calculate x positions for each level
-        for depth, nodes_at_depth in nodes_by_depth.items():
-            num_nodes = len(nodes_at_depth)
-            for i, node in enumerate(sorted(nodes_at_depth)):
-                # Spread nodes horizontally based on their position in their level
-                x = -1.0 + (2.0 * i / (num_nodes - 1 if num_nodes > 1 else 1))
-                y = 1.0 - (depth / max_depth)  # Flip y-axis to put root at top
-                pos[node] = (x, y)
-        
-        # Add edges (connections between nodes)
-        edge_x = []
-        edge_y = []
-        for edge in edges:
-            x0, y0 = pos[edge[0]]
-            x1, y1 = pos[edge[1]]
-            # Add curved edges using control points
-            mid_y = (y0 + y1) / 2
-            edge_x.extend([x0, x0, x1, x1, None])
-            edge_y.extend([y0, mid_y, mid_y, y1, None])
-        
+        # Add edges
         fig.add_trace(go.Scatter(
-            x=edge_x, y=edge_y,
-            line=dict(width=1, color='#888'),
-            hoverinfo='none',
-            mode='lines'
+            x=Xe,
+            y=Ye,
+            mode='lines',
+            line=dict(color='#888', width=1),
+            hoverinfo='none'
         ))
         
-        # Add nodes with adjusted text positioning
-        node_x = []
-        node_y = []
-        node_text = []
+        # Prepare node data
+        node_colors = []
         node_sizes = []
-        for node in nodes:
-            x, y = pos[node]
-            node_x.append(x)
-            node_y.append(y)
-            
-            # Format cell count with appropriate units (K or M)
+        node_texts = []
+        hover_texts = []
+        
+        for i, node in enumerate(nodes):
             count = cell_counts[node]
+            cv = calculate_cv(count)
+            cv_quality = categorize_cv(cv)
+            
+            # Format cell count
             if count >= 1e6:
                 count_str = f"{count/1e6:.1f}M"
             else:
                 count_str = f"{count/1e3:.1f}K"
             
-            # Add percentage of parent
+            # Add percentage if not root
             parent = db.get_parent(node)
             if parent:
                 parent_count = cell_counts[parent]
                 percentage = (count / parent_count) * 100
                 count_str += f" ({percentage:.1f}%)"
             
-            # Create multi-line label with cell count and percentage
-            node_labels[node] = f"{node}<br>{count_str}"
-            node_text.append(node_labels[node])
-            
-            # Scale node size based on log of cell count (with min/max limits)
+            node_colors.append(color_map[cv_quality])
             size = np.clip(np.log10(count) * 10, 20, 50)
             node_sizes.append(size)
+            node_texts.append(node)
+            hover_texts.append(f"{node}<br>{count_str}<br>CV: {cv:.1f}%")
         
+        # Add nodes
         fig.add_trace(go.Scatter(
-            x=node_x, y=node_y,
+            x=Xn,
+            y=Yn,
             mode='markers+text',
             marker=dict(
                 size=node_sizes,
                 color=node_colors,
-                line=dict(width=2, color='white')
+                line=dict(color='white', width=2)
             ),
-            text=nodes,
-            hovertext=node_text,
-            hoverinfo='text',
-            textposition="bottom center"
+            text=node_texts,
+            textposition="bottom center",
+            hovertext=hover_texts,
+            hoverinfo='text'
         ))
         
-        # Update layout with wider range
+        # Update layout
         fig.update_layout(
             title="Cell Population Hierarchy Tree",
             showlegend=False,
             hovermode='closest',
-            margin=dict(b=20,l=5,r=5,t=40),
+            margin=dict(b=20, l=5, r=5, t=40),
             height=800,
             plot_bgcolor='white',
             xaxis=dict(
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
-                range=[-1.5, 1.5]  # Wider range for better spread
+                scaleanchor="y",
+                scaleratio=1,
             ),
             yaxis=dict(
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
-                range=[-0.1, 1.1]
             )
         )
         
