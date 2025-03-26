@@ -4,4 +4,3 @@ numpy>=1.24.0
 plotly>=5.13.0
 networkx>=3.0
 matplotlib>=3.7.0
-pygraphviz>=1.10  # Optional, for better tree layouts

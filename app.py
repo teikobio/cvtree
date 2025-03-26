@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 import os
 import sys
 
-# For visual tree
+# Try to import optional dependencies
 try:
     import networkx as nx
     import matplotlib.pyplot as plt
