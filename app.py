@@ -78,7 +78,7 @@ def main():
         and calculates the expected coefficient of variation (CV) using Keeney's formula: r = (100/CV)².
         
         **Key features:**
-        - Select input cell count (500K, 300K, or 200K)
+        - Select input cell count
         - View estimated cell counts for each population in the hierarchy
         - Analyze expected CV for each population
         - Identify populations with potentially unreliable measurements (high CV)
@@ -92,16 +92,20 @@ def main():
     with st.sidebar:
         st.header("Input Settings")
         
-        # Dropdown to select input cells
-        input_options = {"500K": 500000, "300K": 300000, "200K": 200000}
-        selected_option = st.selectbox(
-            "Select Input Cells:",
-            list(input_options.keys()),
-            index=0
+        # Slider to select input cells starting at 10K with no upper limit
+        input_cells = st.number_input(
+            "Input Cells:",
+            min_value=10000,
+            value=500000,
+            step=10000,
+            format="%d",
+            key="input_cell_input"
         )
-        input_cells = input_options[selected_option]
         
-        st.write(f"Selected: {selected_option} cells")
+        # Display in K format for readability
+        st.write(f"Using {input_cells/1000:.1f}K cells as input")
+        
+        st.write(f"Selected: {input_cells/1000:.0f}K cells")
         
         # Add Keeney's table reference
         st.subheader("Keeney's Reference Table")
@@ -191,7 +195,7 @@ def main():
         st.download_button(
             label="Download as CSV",
             data=csv,
-            file_name=f"cell_counts_{selected_option}.csv",
+            file_name=f"cell_counts_{input_cells/1000:.0f}K.csv",
             mime="text/csv"
         )
     
@@ -222,29 +226,81 @@ def main():
         add_to_tree(root_node)
         tree_df = pd.DataFrame(tree_data)
         
-        # Display tree
-        for _, row in tree_df.iterrows():
-            indent = "  " * row["Level"]
-            prefix = "├── " if row["Level"] > 0 else ""
+        # CSS for the tree view
+        st.markdown("""
+        <style>
+        .tree-node {
+            margin-bottom: 3px;
+            font-family: monospace;
+        }
+        .tree-node-content {
+            display: inline-block;
+        }
+        .node-name {
+            font-weight: bold;
+        }
+        .excellent-cv { color: green; }
+        .good-cv { color: lightgreen; }
+        .fair-cv { color: orange; }
+        .poor-cv { color: red; }
+        .very-poor-cv { color: darkred; }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Build and display tree with better visualization
+        last_level = -1
+        indent_guides = []
+        
+        for i, row in tree_df.iterrows():
+            level = row["Level"]
+            is_last_in_level = i == len(tree_df) - 1 or tree_df.iloc[i + 1]["Level"] <= level
+            
+            # Adjust indent guides
+            if level > last_level:
+                # We're going deeper
+                indent_guides.extend([True] * (level - last_level))
+            elif level < last_level:
+                # We're going back up
+                indent_guides = indent_guides[:level]
+            
+            if is_last_in_level and level > 0:
+                indent_guides[level - 1] = False
+            
+            # Create the tree branch
+            branch = ""
+            for j in range(level):
+                if j == level - 1:
+                    branch += "└─── " if is_last_in_level else "├─── "
+                else:
+                    branch += "│    " if indent_guides[j] else "     "
             
             # Color code based on CV quality
             cv_quality = row["CV Quality"]
             if "Excellent" in cv_quality:
-                quality_color = "green"
+                quality_class = "excellent-cv"
             elif "Good" in cv_quality:
-                quality_color = "lightgreen" 
+                quality_class = "good-cv"
             elif "Fair" in cv_quality:
-                quality_color = "orange"
+                quality_class = "fair-cv"
             elif "Poor" in cv_quality:
-                quality_color = "red"
+                quality_class = "poor-cv"
             else:
-                quality_color = "darkred"
+                quality_class = "very-poor-cv"
                 
-            st.markdown(
-                f"{indent}{prefix}**{row['Population']}**: {row['Cell Count']} cells "
-                f"(CV: {row['CV (%)']}, <span style='color:{quality_color}'>{row['CV Quality']}</span>)",
-                unsafe_allow_html=True
-            )
+            # Create the node text with proper highlighting
+            node_text = f"""
+            <div class="tree-node">
+                <span class="tree-branch">{branch}</span>
+                <span class="tree-node-content">
+                    <span class="node-name">{row['Population']}</span>: {row['Cell Count']} cells 
+                    (CV: {row['CV (%)']}, <span class="{quality_class}">{row['CV Quality']}</span>)
+                </span>
+            </div>
+            """
+            
+            st.markdown(node_text, unsafe_allow_html=True)
+            
+            last_level = level
     
     with tab3:
         st.subheader("CV Analysis")
