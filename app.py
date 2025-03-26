@@ -247,11 +247,11 @@ def main():
         G.add_vertices(len(nodes))
         G.add_edges(edges)
         
-        # Get tree layout with adjusted parameters for better spacing
-        layout = G.layout_reingold_tilford(mode="out", root=0)  # Use layout_reingold_tilford with correct params
+        # Get tree layout with basic tree layout
+        layout = G.layout_tree(mode="out")
         
         # Scale the layout to provide more horizontal space
-        layout.coords = [[x*2, y] for x, y in layout.coords]  # Double the horizontal spacing
+        layout.coords = [[x*3, y] for x, y in layout.coords]  # Triple the horizontal spacing
         
         # Convert layout to position dict
         position = {k: layout.coords[k] for k in range(len(nodes))}
