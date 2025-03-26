@@ -112,12 +112,40 @@ def main():
             help="Typical value: 4-6 million cells/ml from healthy donor"
         )
         
-        # Define processing efficiency percentages (based on the waterfall diagram)
+        # Add sliders for adjusting processing efficiency percentages
+        st.subheader("Processing Efficiency")
+        st.write("Adjust the percentage of cells that survive each processing step:")
+        
+        post_stain_pct = st.slider(
+            "Post-Stain (% of Pre-Stain):", 
+            min_value=10, 
+            max_value=100, 
+            value=35,
+            help="Typically 30-40% of cells survive staining and permeabilization"
+        )
+        
+        events_acquired_pct = st.slider(
+            "Events Acquired (% of Post-Stain):", 
+            min_value=50, 
+            max_value=100, 
+            value=95,
+            help="Typically 90-95% of stained cells are successfully acquired by the instrument"
+        )
+        
+        viable_cells_pct = st.slider(
+            "Single, Viable Cells (% of Events Acquired):", 
+            min_value=50, 
+            max_value=100, 
+            value=80,
+            help="Typically 70-80% of acquired events are single, viable cells after gating"
+        )
+        
+        # Define processing efficiency percentages (based on the waterfall diagram but with adjustable values)
         processing_steps = {
             "Pre-Stain": {"percent_of_previous": 1.0, "description": "Isolated PBMCs"}, 
-            "Post-Stain": {"percent_of_previous": 0.35, "description": "After staining, ~65% cell loss"},
-            "Events Acquired": {"percent_of_previous": 0.95, "description": "Cells successfully measured"},
-            "Single, Viable Cells": {"percent_of_previous": 0.80, "description": "Final cells for analysis"} 
+            "Post-Stain": {"percent_of_previous": post_stain_pct/100, "description": "After staining, antibody binding, and permeabilization"},
+            "Events Acquired": {"percent_of_previous": events_acquired_pct/100, "description": "Cells successfully measured by the flow cytometer"},
+            "Single, Viable Cells": {"percent_of_previous": viable_cells_pct/100, "description": "Final cells after excluding doublets and dead cells"} 
         }
         
         # Calculate waterfall of cell counts
