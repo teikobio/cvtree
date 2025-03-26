@@ -133,44 +133,21 @@ def main():
         waterfall_data = []
         for step, count in cell_counts_waterfall.items():
             percent_of_start = (count / starting_cells) * 100
+            percent_of_previous = 100.0
+            if step != "Pre-Stain":
+                prev_step = list(processing_steps.keys())[list(processing_steps.keys()).index(step)-1]
+                percent_of_previous = (count / cell_counts_waterfall[prev_step]) * 100
+                
             waterfall_data.append({
                 "Processing Step": step,
                 "Cell Count": f"{count:,}",
                 "% of Starting": f"{percent_of_start:.1f}%",
+                "% of Previous Step": f"{percent_of_previous:.1f}%",
                 "Description": processing_steps[step]["description"]
             })
         
         waterfall_df = pd.DataFrame(waterfall_data)
         st.dataframe(waterfall_df, use_container_width=True, hide_index=True)
-        
-        # Create a waterfall chart
-        fig = go.Figure(go.Waterfall(
-            name="Cell Count",
-            orientation="v",
-            measure=["absolute"] + ["relative"] * (len(processing_steps) - 1),
-            x=[step for step in processing_steps.keys()],
-            textposition="outside",
-            text=[f"{cell_counts_waterfall[step]:,}" for step in processing_steps.keys()],
-            y=[
-                cell_counts_waterfall["Pre-Stain"],
-                cell_counts_waterfall["Post-Stain"] - cell_counts_waterfall["Pre-Stain"],
-                cell_counts_waterfall["Events Acquired"] - cell_counts_waterfall["Post-Stain"],
-                cell_counts_waterfall["Single, Viable Cells"] - cell_counts_waterfall["Events Acquired"]
-            ],
-            connector={"line": {"color": "rgb(63, 63, 63)"}},
-            decreasing={"marker": {"color": "Maroon"}},
-            increasing={"marker": {"color": "Teal"}},
-            totals={"marker": {"color": "deep sky blue"}}
-        ))
-        
-        fig.update_layout(
-            title="Cell Count Through Processing Steps",
-            showlegend=False,
-            height=350,
-            margin=dict(t=50, b=20),
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
         
         # Use the Single, Viable Cells as the input for Leukocytes
         input_cells = cell_counts_waterfall["Single, Viable Cells"]
@@ -642,29 +619,21 @@ def main():
         waterfall_df = pd.DataFrame(waterfall_data)
         st.dataframe(waterfall_df, use_container_width=True, hide_index=True)
         
-        # Create a larger, more detailed waterfall chart
-        fig = go.Figure(go.Waterfall(
-            name="Cell Count",
-            orientation="v",
-            measure=["absolute"] + ["relative"] * (len(processing_steps) - 1),
-            x=[step for step in processing_steps.keys()],
+        # Create a simple bar chart instead of waterfall
+        fig = px.bar(
+            x=list(cell_counts_waterfall.keys()),
+            y=list(cell_counts_waterfall.values()),
+            labels={"x": "Processing Step", "y": "Cell Count"},
+            title="Cell Counts Through Processing Steps",
+            text=[f"{count:,}" for count in cell_counts_waterfall.values()]
+        )
+        
+        fig.update_traces(
             textposition="outside",
-            text=[f"{cell_counts_waterfall[step]:,}" for step in processing_steps.keys()],
-            y=[
-                cell_counts_waterfall["Pre-Stain"],
-                cell_counts_waterfall["Post-Stain"] - cell_counts_waterfall["Pre-Stain"],
-                cell_counts_waterfall["Events Acquired"] - cell_counts_waterfall["Post-Stain"],
-                cell_counts_waterfall["Single, Viable Cells"] - cell_counts_waterfall["Events Acquired"]
-            ],
-            connector={"line": {"color": "rgb(63, 63, 63)"}},
-            decreasing={"marker": {"color": "Maroon"}},
-            increasing={"marker": {"color": "Teal"}},
-            totals={"marker": {"color": "deep sky blue"}}
-        ))
+            marker_color="#1f77b4"
+        )
         
         fig.update_layout(
-            title="Cell Count Through Processing Steps",
-            showlegend=False,
             height=500,
             yaxis_title="Cell Count",
         )
