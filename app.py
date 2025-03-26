@@ -160,18 +160,9 @@ def main():
         st.write("**Cell Processing Waterfall:**")
         waterfall_data = []
         for step, count in cell_counts_waterfall.items():
-            percent_of_start = (count / starting_cells) * 100
-            percent_of_previous = 100.0
-            if step != "Pre-Stain":
-                prev_step = list(processing_steps.keys())[list(processing_steps.keys()).index(step)-1]
-                percent_of_previous = (count / cell_counts_waterfall[prev_step]) * 100
-                
             waterfall_data.append({
                 "Processing Step": step,
-                "Cell Count": f"{count:,}",
-                "% of Starting": f"{percent_of_start:.1f}%",
-                "% of Previous Step": f"{percent_of_previous:.1f}%",
-                "Description": processing_steps[step]["description"]
+                "Cell Count": f"{count:,}"
             })
         
         waterfall_df = pd.DataFrame(waterfall_data)
