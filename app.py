@@ -13,6 +13,14 @@ import plotly.graph_objects as go
 import os
 import sys
 
+# For visual tree
+try:
+    import networkx as nx
+    import matplotlib.pyplot as plt
+    NETWORKX_AVAILABLE = True
+except ImportError:
+    NETWORKX_AVAILABLE = False
+
 # Add the current directory to the path to import custom modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -78,7 +86,7 @@ def main():
         and calculates the expected coefficient of variation (CV) using Keeney's formula: r = (100/CV)².
         
         **Key features:**
-        - Select input cell count
+        - Enter any input cell count (starting from 10K)
         - View estimated cell counts for each population in the hierarchy
         - Analyze expected CV for each population
         - Identify populations with potentially unreliable measurements (high CV)
