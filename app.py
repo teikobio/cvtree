@@ -241,11 +241,23 @@ def main():
         fig = go.Figure()
         
         # Create a networkx graph for layout calculation
-        G = nx.Graph()
+        G = nx.DiGraph()  # Using DiGraph for directed edges to maintain hierarchy
         G.add_edges_from(edges)
         
-        # Use Reingold-Tilford layout
-        pos = nx.spring_layout(G)
+        # Use hierarchical layout
+        pos = nx.kamada_kawai_layout(G)  # First get a basic layout
+        
+        # Adjust y-coordinates based on depth from root
+        root_node = db.get_root_node()
+        depths = nx.shortest_path_length(G, root_node)
+        max_depth = max(depths.values())
+        
+        # Normalize depths and flip y-axis to put root at top
+        for node in pos:
+            depth = depths[node]
+            x, _ = pos[node]
+            y = 1 - (depth / max_depth)  # Flip y-axis and normalize
+            pos[node] = (x, y)
         
         # Add edges (connections between nodes)
         edge_x = []
@@ -258,7 +270,7 @@ def main():
         
         fig.add_trace(go.Scatter(
             x=edge_x, y=edge_y,
-            line=dict(width=0.5, color='#888'),
+            line=dict(width=1, color='#888'),
             hoverinfo='none',
             mode='lines'
         ))
@@ -267,19 +279,34 @@ def main():
         node_x = []
         node_y = []
         node_text = []
+        node_sizes = []
         for node in nodes:
             x, y = pos[node]
             node_x.append(x)
             node_y.append(y)
+            
+            # Format cell count with appropriate units (K or M)
+            count = cell_counts[node]
+            if count >= 1e6:
+                count_str = f"{count/1e6:.1f}M"
+            else:
+                count_str = f"{count/1e3:.1f}K"
+                
+            # Create multi-line label
+            node_labels[node] = f"{node}<br>{count_str} cells"
             node_text.append(node_labels[node])
+            
+            # Scale node size based on log of cell count (with min/max limits)
+            size = np.clip(np.log10(count) * 10, 20, 50)
+            node_sizes.append(size)
         
         fig.add_trace(go.Scatter(
             x=node_x, y=node_y,
             mode='markers+text',
             marker=dict(
-                size=30,
+                size=node_sizes,
                 color=node_colors,
-                line_width=2
+                line=dict(width=2, color='white')
             ),
             text=nodes,
             hovertext=node_text,
@@ -294,12 +321,20 @@ def main():
             hovermode='closest',
             margin=dict(b=20,l=5,r=5,t=40),
             height=800,
-            plot_bgcolor='white'
+            plot_bgcolor='white',
+            xaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False,
+                range=[-1.2, 1.2]  # Adjust range to prevent text cutoff
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False,
+                range=[-0.1, 1.1]  # Adjust range to prevent text cutoff
+            )
         )
-        
-        # Remove axes
-        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False)
-        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False)
         
         st.plotly_chart(fig, use_container_width=True)
         
