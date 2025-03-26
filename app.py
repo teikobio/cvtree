@@ -210,105 +210,112 @@ def main():
     with tab2:
         st.subheader("Cell Population Hierarchy")
         
-        # Create a tree-like layout
-        tree_data = []
+        # Create data for the tree visualization
+        nodes = []
+        edges = []
+        node_labels = {}
+        node_colors = []
         
-        def add_to_tree(node, level=0, path=""):
-            current_path = f"{path}/{node}" if path else node
-            count = int(cell_counts[node])
+        # Color mapping for CV quality
+        color_map = {
+            "Excellent": "#00FF00",  # Green
+            "Good": "#90EE90",       # Light green
+            "Fair": "#FFA500",       # Orange
+            "Poor": "#FF4500",       # Red-Orange
+            "Very Poor": "#FF0000"   # Red
+        }
+        
+        # Build nodes and edges
+        for cell_type, count in cell_counts.items():
+            nodes.append(cell_type)
             cv = calculate_cv(count)
-            tree_data.append({
-                "Level": level,
-                "Path": current_path,
-                "Population": node,
-                "Cell Count": count,
-                "CV (%)": f"{cv:.2f}%",
-                "CV Quality": categorize_cv(cv)
-            })
+            cv_quality = categorize_cv(cv)
+            node_labels[cell_type] = f"{cell_type}<br>{count:,} cells<br>CV: {cv:.2f}%"
+            node_colors.append(color_map[cv_quality])
             
-            for child in db.get_children(node):
-                add_to_tree(child, level+1, current_path)
+            parent = db.get_parent(cell_type)
+            if parent:
+                edges.append((parent, cell_type))
         
-        # Start from the root node
-        root_node = db.get_root_node()
-        add_to_tree(root_node)
-        tree_df = pd.DataFrame(tree_data)
+        # Create the tree layout using plotly
+        fig = go.Figure()
         
-        # CSS for the tree view
-        st.markdown("""
-        <style>
-        .tree-node {
-            margin-bottom: 3px;
-            font-family: monospace;
-        }
-        .tree-node-content {
-            display: inline-block;
-        }
-        .node-name {
-            font-weight: bold;
-        }
-        .excellent-cv { color: green; }
-        .good-cv { color: lightgreen; }
-        .fair-cv { color: orange; }
-        .poor-cv { color: red; }
-        .very-poor-cv { color: darkred; }
-        </style>
-        """, unsafe_allow_html=True)
+        # Create a networkx graph for layout calculation
+        G = nx.Graph()
+        G.add_edges_from(edges)
         
-        # Build and display tree with better visualization
-        last_level = -1
-        indent_guides = []
+        # Use Reingold-Tilford layout
+        pos = nx.spring_layout(G)
         
-        for i, row in tree_df.iterrows():
-            level = row["Level"]
-            is_last_in_level = i == len(tree_df) - 1 or tree_df.iloc[i + 1]["Level"] <= level
-            
-            # Adjust indent guides
-            if level > last_level:
-                # We're going deeper
-                indent_guides.extend([True] * (level - last_level))
-            elif level < last_level:
-                # We're going back up
-                indent_guides = indent_guides[:level]
-            
-            if is_last_in_level and level > 0:
-                indent_guides[level - 1] = False
-            
-            # Create the tree branch
-            branch = ""
-            for j in range(level):
-                if j == level - 1:
-                    branch += "└─── " if is_last_in_level else "├─── "
-                else:
-                    branch += "│    " if indent_guides[j] else "     "
-            
-            # Color code based on CV quality
-            cv_quality = row["CV Quality"]
-            if "Excellent" in cv_quality:
-                quality_class = "excellent-cv"
-            elif "Good" in cv_quality:
-                quality_class = "good-cv"
-            elif "Fair" in cv_quality:
-                quality_class = "fair-cv"
-            elif "Poor" in cv_quality:
-                quality_class = "poor-cv"
-            else:
-                quality_class = "very-poor-cv"
-                
-            # Create the node text with proper highlighting
-            node_text = f"""
-            <div class="tree-node">
-                <span class="tree-branch">{branch}</span>
-                <span class="tree-node-content">
-                    <span class="node-name">{row['Population']}</span>: {row['Cell Count']} cells 
-                    (CV: {row['CV (%)']}, <span class="{quality_class}">{row['CV Quality']}</span>)
-                </span>
-            </div>
-            """
-            
-            st.markdown(node_text, unsafe_allow_html=True)
-            
-            last_level = level
+        # Add edges (connections between nodes)
+        edge_x = []
+        edge_y = []
+        for edge in edges:
+            x0, y0 = pos[edge[0]]
+            x1, y1 = pos[edge[1]]
+            edge_x.extend([x0, x1, None])
+            edge_y.extend([y0, y1, None])
+        
+        fig.add_trace(go.Scatter(
+            x=edge_x, y=edge_y,
+            line=dict(width=0.5, color='#888'),
+            hoverinfo='none',
+            mode='lines'
+        ))
+        
+        # Add nodes
+        node_x = []
+        node_y = []
+        node_text = []
+        for node in nodes:
+            x, y = pos[node]
+            node_x.append(x)
+            node_y.append(y)
+            node_text.append(node_labels[node])
+        
+        fig.add_trace(go.Scatter(
+            x=node_x, y=node_y,
+            mode='markers+text',
+            marker=dict(
+                size=30,
+                color=node_colors,
+                line_width=2
+            ),
+            text=nodes,
+            hovertext=node_text,
+            hoverinfo='text',
+            textposition="bottom center"
+        ))
+        
+        # Update layout
+        fig.update_layout(
+            title="Cell Population Hierarchy Tree",
+            showlegend=False,
+            hovermode='closest',
+            margin=dict(b=20,l=5,r=5,t=40),
+            height=800,
+            plot_bgcolor='white'
+        )
+        
+        # Remove axes
+        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False)
+        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False)
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Add legend for CV quality colors
+        st.subheader("CV Quality Legend")
+        legend_cols = st.columns(len(color_map))
+        for col, (quality, color) in zip(legend_cols, color_map.items()):
+            col.markdown(f"""
+            <div style="
+                width: 20px;
+                height: 20px;
+                background-color: {color};
+                display: inline-block;
+                margin-right: 5px;
+            "></div> {quality}
+            """, unsafe_allow_html=True)
     
     with tab3:
         st.subheader("CV Analysis")
