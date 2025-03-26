@@ -47,7 +47,8 @@ def calculate_cell_counts(input_cells, hierarchy=None):
     
     cell_counts = {}
     
-    # First, calculate cell count for the root node (typically Leukocytes)
+    # First, calculate cell count for the root node (Leukocytes)
+    # The input cells represent Single, Viable Cells that feed into Leukocytes
     root_node = db.get_root_node()
     cell_counts[root_node] = input_cells
     
@@ -100,15 +101,79 @@ def main():
     with st.sidebar:
         st.header("Input Settings")
         
-        # Slider to select input cells starting at 10K with no upper limit
-        input_cells = st.number_input(
-            "Input Cells:",
-            min_value=10000,
-            value=500000,
-            step=10000,
+        # Add starting cells in blood input
+        st.subheader("Sample Processing")
+        starting_cells = st.number_input(
+            "Absolute number of cells in blood (per ml):",
+            min_value=1000000,
+            value=2500000,
+            step=100000,
             format="%d",
-            key="input_cell_input"
+            help="Typical value: 4-6 million cells/ml from healthy donor"
         )
+        
+        # Define processing efficiency percentages (based on the waterfall diagram)
+        processing_steps = {
+            "Pre-Stain": {"percent_of_previous": 1.0, "description": "Isolated PBMCs"}, 
+            "Post-Stain": {"percent_of_previous": 0.35, "description": "After staining, ~65% cell loss"},
+            "Events Acquired": {"percent_of_previous": 0.95, "description": "Cells successfully measured"},
+            "Single, Viable Cells": {"percent_of_previous": 0.80, "description": "Final cells for analysis"} 
+        }
+        
+        # Calculate waterfall of cell counts
+        current_count = starting_cells
+        cell_counts_waterfall = {}
+        
+        for step, info in processing_steps.items():
+            current_count = int(current_count * info["percent_of_previous"])
+            cell_counts_waterfall[step] = current_count
+        
+        # Display the waterfall as a table
+        waterfall_data = []
+        for step, count in cell_counts_waterfall.items():
+            percent_of_start = (count / starting_cells) * 100
+            waterfall_data.append({
+                "Processing Step": step,
+                "Cell Count": f"{count:,}",
+                "% of Starting": f"{percent_of_start:.1f}%",
+                "Description": processing_steps[step]["description"]
+            })
+        
+        waterfall_df = pd.DataFrame(waterfall_data)
+        st.dataframe(waterfall_df, use_container_width=True, hide_index=True)
+        
+        # Create a waterfall chart
+        fig = go.Figure(go.Waterfall(
+            name="Cell Count",
+            orientation="v",
+            measure=["absolute"] + ["relative"] * (len(processing_steps) - 1),
+            x=[step for step in processing_steps.keys()],
+            textposition="outside",
+            text=[f"{cell_counts_waterfall[step]:,}" for step in processing_steps.keys()],
+            y=[
+                cell_counts_waterfall["Pre-Stain"],
+                cell_counts_waterfall["Post-Stain"] - cell_counts_waterfall["Pre-Stain"],
+                cell_counts_waterfall["Events Acquired"] - cell_counts_waterfall["Post-Stain"],
+                cell_counts_waterfall["Single, Viable Cells"] - cell_counts_waterfall["Events Acquired"]
+            ],
+            connector={"line": {"color": "rgb(63, 63, 63)"}},
+            decreasing={"marker": {"color": "Maroon"}},
+            increasing={"marker": {"color": "Teal"}},
+            totals={"marker": {"color": "deep sky blue"}}
+        ))
+        
+        fig.update_layout(
+            title="Cell Count Waterfall Through Processing Steps",
+            showlegend=False,
+            height=350,
+            margin=dict(t=50, b=20),
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Use the Single, Viable Cells as the input for Leukocytes
+        input_cells = cell_counts_waterfall["Single, Viable Cells"]
+        st.write(f"**Analysis using {input_cells:,} Single, Viable Cells as Leukocytes**")
         
         # Add Keeney's table reference
         st.subheader("Keeney's Reference Table")
