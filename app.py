@@ -244,20 +244,29 @@ def main():
         G = nx.DiGraph()  # Using DiGraph for directed edges to maintain hierarchy
         G.add_edges_from(edges)
         
-        # Use hierarchical layout
-        pos = nx.kamada_kawai_layout(G)  # First get a basic layout
+        # Get initial layout
+        pos = nx.kamada_kawai_layout(G)
         
-        # Adjust y-coordinates based on depth from root
+        # Get hierarchy levels and organize nodes by level
         root_node = db.get_root_node()
         depths = nx.shortest_path_length(G, root_node)
         max_depth = max(depths.values())
         
-        # Normalize depths and flip y-axis to put root at top
-        for node in pos:
-            depth = depths[node]
-            x, _ = pos[node]
-            y = 1 - (depth / max_depth)  # Flip y-axis and normalize
-            pos[node] = (x, y)
+        # Group nodes by their depth
+        nodes_by_depth = {}
+        for node, depth in depths.items():
+            if depth not in nodes_by_depth:
+                nodes_by_depth[depth] = []
+            nodes_by_depth[depth].append(node)
+        
+        # Calculate x positions for each level
+        for depth, nodes_at_depth in nodes_by_depth.items():
+            num_nodes = len(nodes_at_depth)
+            for i, node in enumerate(sorted(nodes_at_depth)):
+                # Spread nodes horizontally based on their position in their level
+                x = -1.0 + (2.0 * i / (num_nodes - 1 if num_nodes > 1 else 1))
+                y = 1.0 - (depth / max_depth)  # Flip y-axis to put root at top
+                pos[node] = (x, y)
         
         # Add edges (connections between nodes)
         edge_x = []
@@ -265,8 +274,10 @@ def main():
         for edge in edges:
             x0, y0 = pos[edge[0]]
             x1, y1 = pos[edge[1]]
-            edge_x.extend([x0, x1, None])
-            edge_y.extend([y0, y1, None])
+            # Add curved edges using control points
+            mid_y = (y0 + y1) / 2
+            edge_x.extend([x0, x0, x1, x1, None])
+            edge_y.extend([y0, mid_y, mid_y, y1, None])
         
         fig.add_trace(go.Scatter(
             x=edge_x, y=edge_y,
@@ -275,7 +286,7 @@ def main():
             mode='lines'
         ))
         
-        # Add nodes
+        # Add nodes with adjusted text positioning
         node_x = []
         node_y = []
         node_text = []
@@ -291,9 +302,16 @@ def main():
                 count_str = f"{count/1e6:.1f}M"
             else:
                 count_str = f"{count/1e3:.1f}K"
-                
-            # Create multi-line label
-            node_labels[node] = f"{node}<br>{count_str} cells"
+            
+            # Add percentage of parent
+            parent = db.get_parent(node)
+            if parent:
+                parent_count = cell_counts[parent]
+                percentage = (count / parent_count) * 100
+                count_str += f" ({percentage:.1f}%)"
+            
+            # Create multi-line label with cell count and percentage
+            node_labels[node] = f"{node}<br>{count_str}"
             node_text.append(node_labels[node])
             
             # Scale node size based on log of cell count (with min/max limits)
@@ -314,7 +332,7 @@ def main():
             textposition="bottom center"
         ))
         
-        # Update layout
+        # Update layout with wider range
         fig.update_layout(
             title="Cell Population Hierarchy Tree",
             showlegend=False,
@@ -326,13 +344,13 @@ def main():
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
-                range=[-1.2, 1.2]  # Adjust range to prevent text cutoff
+                range=[-1.5, 1.5]  # Wider range for better spread
             ),
             yaxis=dict(
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
-                range=[-0.1, 1.1]  # Adjust range to prevent text cutoff
+                range=[-0.1, 1.1]
             )
         )
         
