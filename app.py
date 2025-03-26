@@ -248,7 +248,7 @@ def main():
         G.add_edges(edges)
         
         # Get tree layout with basic tree layout
-        layout = G.layout_tree(mode="out")
+        layout = G.layout("tree", mode="out")
         
         # Scale the layout to provide more horizontal space
         layout.coords = [[x*3, y] for x, y in layout.coords]  # Triple the horizontal spacing
