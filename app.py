@@ -248,16 +248,16 @@ def main():
         G.add_edges(edges)
         
         # Get tree layout with adjusted parameters for better spacing
-        layout = G.layout('rt', root=[0], rootlevel=10)  # Increase rootlevel for more vertical space
+        layout = G.layout_reingold_tilford(mode="out", root=0)  # Use layout_reingold_tilford with correct params
         
         # Scale the layout to provide more horizontal space
-        layout.scale(2.0, 1.0)  # Double the horizontal spacing
+        layout.coords = [[x*2, y] for x, y in layout.coords]  # Double the horizontal spacing
         
         # Convert layout to position dict
-        position = {k: layout[k] for k in range(len(nodes))}
+        position = {k: layout.coords[k] for k in range(len(nodes))}
         
         # Calculate Y range for inversion
-        Y = [layout[k][1] for k in range(len(nodes))]
+        Y = [layout.coords[k][1] for k in range(len(nodes))]
         M = max(Y)
         
         # Prepare node positions
