@@ -129,6 +129,7 @@ def main():
             cell_counts_waterfall[step] = current_count
         
         # Display the waterfall as a table
+        st.write("**Cell Processing Waterfall:**")
         waterfall_data = []
         for step, count in cell_counts_waterfall.items():
             percent_of_start = (count / starting_cells) * 100
@@ -163,7 +164,7 @@ def main():
         ))
         
         fig.update_layout(
-            title="Cell Count Waterfall Through Processing Steps",
+            title="Cell Count Through Processing Steps",
             showlegend=False,
             height=350,
             margin=dict(t=50, b=20),
@@ -173,7 +174,7 @@ def main():
         
         # Use the Single, Viable Cells as the input for Leukocytes
         input_cells = cell_counts_waterfall["Single, Viable Cells"]
-        st.write(f"**Analysis using {input_cells:,} Single, Viable Cells as Leukocytes**")
+        st.success(f"Analysis using {input_cells:,} Single, Viable Cells as input for Leukocytes")
         
         # Add Keeney's table reference
         st.subheader("Keeney's Reference Table")
@@ -230,11 +231,12 @@ def main():
     df_sorted = df.sort_values(by="CV Value")
     
     # Create tabs for different views
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "Table View", 
         "Tree View", 
         "CV Analysis",
-        "Cell Distribution"
+        "Cell Distribution",
+        "Cell Processing"
     ])
     
     with tab1:
@@ -611,6 +613,70 @@ def main():
         
         fig2.update_layout(height=700)
         st.plotly_chart(fig2, use_container_width=True)
+    
+    with tab5:
+        st.subheader("Cell Processing Waterfall")
+        
+        st.markdown("""
+        This diagram shows how cells are processed from the initial blood sample through
+        various steps until they become usable Single, Viable Cells for analysis.
+        """)
+        
+        # Display the waterfall data as a larger table
+        waterfall_data = []
+        for step, count in cell_counts_waterfall.items():
+            percent_of_start = (count / starting_cells) * 100
+            percent_of_previous = 100
+            if step != "Pre-Stain":
+                prev_step = list(processing_steps.keys())[list(processing_steps.keys()).index(step)-1]
+                percent_of_previous = (count / cell_counts_waterfall[prev_step]) * 100
+                
+            waterfall_data.append({
+                "Processing Step": step,
+                "Cell Count": f"{count:,}",
+                "% of Starting": f"{percent_of_start:.1f}%",
+                "% of Previous Step": f"{percent_of_previous:.1f}%",
+                "Description": processing_steps[step]["description"]
+            })
+        
+        waterfall_df = pd.DataFrame(waterfall_data)
+        st.dataframe(waterfall_df, use_container_width=True, hide_index=True)
+        
+        # Create a larger, more detailed waterfall chart
+        fig = go.Figure(go.Waterfall(
+            name="Cell Count",
+            orientation="v",
+            measure=["absolute"] + ["relative"] * (len(processing_steps) - 1),
+            x=[step for step in processing_steps.keys()],
+            textposition="outside",
+            text=[f"{cell_counts_waterfall[step]:,}" for step in processing_steps.keys()],
+            y=[
+                cell_counts_waterfall["Pre-Stain"],
+                cell_counts_waterfall["Post-Stain"] - cell_counts_waterfall["Pre-Stain"],
+                cell_counts_waterfall["Events Acquired"] - cell_counts_waterfall["Post-Stain"],
+                cell_counts_waterfall["Single, Viable Cells"] - cell_counts_waterfall["Events Acquired"]
+            ],
+            connector={"line": {"color": "rgb(63, 63, 63)"}},
+            decreasing={"marker": {"color": "Maroon"}},
+            increasing={"marker": {"color": "Teal"}},
+            totals={"marker": {"color": "deep sky blue"}}
+        ))
+        
+        fig.update_layout(
+            title="Cell Count Through Processing Steps",
+            showlegend=False,
+            height=500,
+            yaxis_title="Cell Count",
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Add explanation about the final cells
+        st.info(f"""
+        **Final Analysis Population:** The resulting {cell_counts_waterfall['Single, Viable Cells']:,} 
+        Single, Viable Cells become the input for the Leukocytes population, which is the root node 
+        for all subsequent analysis in the hierarchy.
+        """)
 
 if __name__ == "__main__":
     main()
