@@ -247,8 +247,11 @@ def main():
         G.add_vertices(len(nodes))
         G.add_edges(edges)
         
-        # Get tree layout
-        layout = G.layout('rt')  # rt = Reingold-Tilford tree layout
+        # Get tree layout with adjusted parameters for better spacing
+        layout = G.layout('rt', root=[0], rootlevel=10)  # Increase rootlevel for more vertical space
+        
+        # Scale the layout to provide more horizontal space
+        layout.scale(2.0, 1.0)  # Double the horizontal spacing
         
         # Convert layout to position dict
         position = {k: layout[k] for k in range(len(nodes))}
@@ -285,6 +288,7 @@ def main():
         node_sizes = []
         node_texts = []
         hover_texts = []
+        text_positions = []  # Add variable text positions
         
         for i, node in enumerate(nodes):
             count = cell_counts[node]
@@ -309,8 +313,19 @@ def main():
             node_sizes.append(size)
             node_texts.append(node)
             hover_texts.append(f"{node}<br>{count_str}<br>CV: {cv:.1f}%")
+            
+            # Alternate text positions for better spacing
+            siblings = [n for n in nodes if db.get_parent(n) == parent]
+            if len(siblings) > 1:
+                idx = siblings.index(node)
+                if idx % 2 == 0:
+                    text_positions.append("bottom right")
+                else:
+                    text_positions.append("bottom left")
+            else:
+                text_positions.append("bottom center")
         
-        # Add nodes
+        # Add nodes with adjusted text positioning
         fig.add_trace(go.Scatter(
             x=Xn,
             y=Yn,
@@ -321,17 +336,17 @@ def main():
                 line=dict(color='white', width=2)
             ),
             text=node_texts,
-            textposition="bottom center",
+            textposition=text_positions,  # Use variable text positions
             hovertext=hover_texts,
             hoverinfo='text'
         ))
         
-        # Update layout
+        # Update layout with wider range
         fig.update_layout(
             title="Cell Population Hierarchy Tree",
             showlegend=False,
             hovermode='closest',
-            dragmode='pan',  # Enable panning by default
+            dragmode='pan',
             margin=dict(b=20, l=5, r=5, t=40),
             height=800,
             plot_bgcolor='white',
@@ -341,6 +356,7 @@ def main():
                 showticklabels=False,
                 scaleanchor="y",
                 scaleratio=1,
+                range=[-2, 2],  # Wider x-range for better spacing
             ),
             yaxis=dict(
                 showgrid=False,
