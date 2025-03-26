@@ -225,7 +225,7 @@ def main():
             "Very Poor (>20%)": "#FF0000"   # Red
         }
         
-        # Build nodes and edges
+        # Build nodes and edges list for tree layout
         root_node = db.get_root_node()
         node_to_index = {root_node: 0}  # Map node names to indices
         current_index = 1
@@ -336,12 +336,12 @@ def main():
                 line=dict(color='white', width=2)
             ),
             text=node_texts,
-            textposition=text_positions,  # Use variable text positions
+            textposition=text_positions,
             hovertext=hover_texts,
             hoverinfo='text'
         ))
         
-        # Update layout with wider range
+        # Update layout
         fig.update_layout(
             title="Cell Population Hierarchy Tree",
             showlegend=False,
@@ -356,7 +356,6 @@ def main():
                 showticklabels=False,
                 scaleanchor="y",
                 scaleratio=1,
-                range=[-2, 2],  # Wider x-range for better spacing
             ),
             yaxis=dict(
                 showgrid=False,
