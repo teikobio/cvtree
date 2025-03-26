@@ -250,15 +250,16 @@ def main():
         # Get tree layout with basic tree layout
         layout = G.layout("tree", mode="out")
         
-        # Scale the layout to provide more horizontal space
-        layout.coords = [[x*3, y] for x, y in layout.coords]  # Triple the horizontal spacing
+        # Get coordinates from layout and scale them
+        coords = layout.coords
+        scaled_coords = [[x*3, y] for x, y in coords]  # Triple the horizontal spacing
         
-        # Convert layout to position dict
-        position = {k: layout.coords[k] for k in range(len(nodes))}
+        # Convert scaled coordinates to position dict
+        position = {k: scaled_coords[k] for k in range(len(nodes))}
         
         # Calculate Y range for inversion
-        Y = [layout.coords[k][1] for k in range(len(nodes))]
-        M = max(Y)
+        Y = [scaled_coords[k][1] for k in range(len(nodes))]
+        M = max(Y) if Y else 0
         
         # Prepare node positions
         Xn = [position[k][0] for k in range(len(nodes))]
