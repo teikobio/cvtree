@@ -110,11 +110,6 @@ def main():
             key="input_cell_input"
         )
         
-        # Display in K format for readability
-        st.write(f"Using {input_cells/1000:.1f}K cells as input")
-        
-        st.write(f"Selected: {input_cells/1000:.0f}K cells")
-        
         # Add Keeney's table reference
         st.subheader("Keeney's Reference Table")
         st.markdown("""
