@@ -351,7 +351,7 @@ def main():
             values='Cell Count',
             color='CV Value',
             color_continuous_scale='RdYlGn_r',
-            title=f"Cell Distribution for {selected_option} Input Cells",
+            title=f"Cell Distribution for {input_cells/1000:.1f}K Input Cells",
             hover_data=['CV (%)', 'CV Quality']
         )
         
@@ -365,7 +365,7 @@ def main():
             values='Cell Count',
             color='CV Value',
             color_continuous_scale='RdYlGn_r',
-            title=f"Sunburst Chart of Cell Distribution",
+            title=f"Sunburst Chart of Cell Distribution ({input_cells/1000:.1f}K Input Cells)",
             hover_data=['CV (%)', 'CV Quality']
         )
         
