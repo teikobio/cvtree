@@ -622,10 +622,44 @@ def main():
     with tab5:
         st.subheader("Cell Processing Waterfall")
         
+        # Add reference to the sidebar sliders
+        st.info("""
+        **Note:** This visualization is controlled by the sliders in the sidebar.
+        Adjust the sliders in the **Processing Efficiency** section to see how changes in cell recovery
+        at each step affect the final cell count.
+        """)
+        
         st.markdown("""
         This diagram shows how cells are processed from the initial blood sample through
         various steps until they become usable Single, Viable Cells for analysis.
         """)
+        
+        # Create slider echoes to show current values
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric(
+                "Post-Stain Recovery", 
+                f"{post_stain_pct}%", 
+                delta=f"{post_stain_pct-35}" if post_stain_pct != 35 else None,
+                help="Percentage of Pre-Stain cells that survive staining"
+            )
+            
+        with col2:
+            st.metric(
+                "Events Acquired Recovery", 
+                f"{events_acquired_pct}%", 
+                delta=f"{events_acquired_pct-95}" if events_acquired_pct != 95 else None,
+                help="Percentage of Post-Stain cells successfully acquired"
+            )
+            
+        with col3:
+            st.metric(
+                "Single, Viable Cells Recovery", 
+                f"{viable_cells_pct}%", 
+                delta=f"{viable_cells_pct-80}" if viable_cells_pct != 80 else None,
+                help="Percentage of acquired events that are single, viable cells"
+            )
         
         # Display the waterfall data as a larger table
         waterfall_data = []
@@ -656,9 +690,21 @@ def main():
             text=[f"{count:,}" for count in cell_counts_waterfall.values()]
         )
         
+        # Add step recovery percentages to the hover text
+        hover_text = []
+        for i, step in enumerate(cell_counts_waterfall.keys()):
+            if step == "Pre-Stain":
+                hover_text.append(f"{step}<br>Count: {cell_counts_waterfall[step]:,}<br>Starting Point (100%)")
+            else:
+                prev_step = list(processing_steps.keys())[i-1]
+                pct = (cell_counts_waterfall[step] / cell_counts_waterfall[prev_step]) * 100
+                hover_text.append(f"{step}<br>Count: {cell_counts_waterfall[step]:,}<br>Recovery: {pct:.1f}% of {prev_step}")
+        
         fig.update_traces(
             textposition="outside",
-            marker_color="#1f77b4"
+            marker_color="#1f77b4",
+            hovertext=hover_text,
+            hoverinfo="text"
         )
         
         fig.update_layout(
@@ -668,11 +714,50 @@ def main():
         
         st.plotly_chart(fig, use_container_width=True)
         
+        # Create a gauge chart to visualize final retention percentage
+        final_retention = (cell_counts_waterfall["Single, Viable Cells"] / starting_cells) * 100
+        
+        gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=final_retention,
+            title={"text": "Overall Cell Retention"},
+            domain={"x": [0, 1], "y": [0, 1]},
+            gauge={
+                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "darkblue"},
+                "bar": {"color": "royalblue"},
+                "bgcolor": "white",
+                "borderwidth": 2,
+                "bordercolor": "gray",
+                "steps": [
+                    {"range": [0, 10], "color": "firebrick"},
+                    {"range": [10, 25], "color": "darkorange"},
+                    {"range": [25, 40], "color": "gold"},
+                    {"range": [40, 100], "color": "forestgreen"}
+                ],
+            }
+        ))
+        
+        gauge.update_layout(
+            height=300,
+            margin=dict(l=20, r=20, t=50, b=20),
+        )
+        
+        st.plotly_chart(gauge, use_container_width=True)
+        
         # Add explanation about the final cells
         st.info(f"""
         **Final Analysis Population:** The resulting {cell_counts_waterfall['Single, Viable Cells']:,} 
-        Single, Viable Cells become the input for the Leukocytes population, which is the root node 
-        for all subsequent analysis in the hierarchy.
+        Single, Viable Cells ({final_retention:.1f}% of starting cells) become the input for the Leukocytes population, 
+        which is the root node for all subsequent analysis in the hierarchy.
+        """)
+        
+        # Add a note about typical values
+        st.write("""
+        **Typical values:**
+        - Post-Stain recovery: 30-40% of Pre-Stain
+        - Events Acquired: 90-95% of Post-Stain
+        - Single, Viable Cells: 70-80% of Events Acquired
+        - Overall retention: 20-30% of starting cells
         """)
 
 if __name__ == "__main__":
