@@ -331,6 +331,7 @@ def main():
             title="Cell Population Hierarchy Tree",
             showlegend=False,
             hovermode='closest',
+            dragmode='pan',  # Enable panning by default
             margin=dict(b=20, l=5, r=5, t=40),
             height=800,
             plot_bgcolor='white',
@@ -348,7 +349,17 @@ def main():
             )
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        # Enable all interactive features
+        st.plotly_chart(fig, use_container_width=True, config={
+            'scrollZoom': True,     # Enable zoom with mouse wheel
+            'displayModeBar': True, # Always show the mode bar
+            'modeBarButtonsToAdd': [
+                'pan2d',
+                'zoomIn2d',
+                'zoomOut2d',
+                'resetScale2d'
+            ]
+        })
         
         # Add legend for CV quality colors
         st.subheader("CV Quality Legend")
