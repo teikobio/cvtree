@@ -101,103 +101,169 @@ def main():
     with st.sidebar:
         st.header("Input Settings")
         
-        # Add starting cells in blood input
-        st.subheader("Sample Processing")
-        starting_cells = st.number_input(
-            "Absolute number of cells in blood (per ml):",
-            min_value=1000000,
-            value=2500000,
-            step=100000,
-            format="%d",
-            help="Typical value: 4-6 million cells/ml from healthy donor"
+        # Add mode selector
+        analysis_mode = st.radio(
+            "Analysis Mode",
+            ["Forward: Input cells → Population counts",
+             "Reverse: Target CV → Required input cells"],
+            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
         )
         
-        # Add sliders for adjusting processing efficiency percentages
-        st.subheader("Processing Efficiency")
-        st.write("Adjust the percentage of cells that survive each processing step:")
-        
-        post_stain_pct = st.slider(
-            "Post-Stain (% of Pre-Stain):", 
-            min_value=10, 
-            max_value=100, 
-            value=35,
-            help="Typically 30-40% of cells survive staining and permeabilization"
-        )
-        
-        events_acquired_pct = st.slider(
-            "Events Acquired (% of Post-Stain):", 
-            min_value=50, 
-            max_value=100, 
-            value=95,
-            help="Typically 90-95% of stained cells are successfully acquired by the instrument"
-        )
-        
-        viable_cells_pct = st.slider(
-            "Single, Viable Cells (% of Events Acquired):", 
-            min_value=50, 
-            max_value=100, 
-            value=80,
-            help="Typically 70-80% of acquired events are single, viable cells after gating"
-        )
-        
-        # Define processing efficiency percentages (based on the waterfall diagram but with adjustable values)
-        processing_steps = {
-            "Pre-Stain": {"percent_of_previous": 1.0, "description": "Isolated PBMCs"}, 
-            "Post-Stain": {"percent_of_previous": post_stain_pct/100, "description": "After staining, antibody binding, and permeabilization"},
-            "Events Acquired": {"percent_of_previous": events_acquired_pct/100, "description": "Cells successfully measured by the flow cytometer"},
-            "Single, Viable Cells": {"percent_of_previous": viable_cells_pct/100, "description": "Final cells after excluding doublets and dead cells"} 
-        }
-        
-        # Calculate waterfall of cell counts
-        current_count = starting_cells
-        cell_counts_waterfall = {}
-        
-        for step, info in processing_steps.items():
-            current_count = int(current_count * info["percent_of_previous"])
-            cell_counts_waterfall[step] = current_count
-        
-        # Display the waterfall as a table
-        st.write("**Cell Processing Waterfall:**")
-        waterfall_data = []
-        for step, count in cell_counts_waterfall.items():
-            waterfall_data.append({
-                "Processing Step": step,
-                "Cell Count": f"{count:,}"
+        if analysis_mode.startswith("Forward"):
+            # Existing forward calculation mode
+            st.subheader("Sample Processing")
+            starting_cells = st.number_input(
+                "Absolute number of cells in blood (per ml):",
+                min_value=1000000,
+                value=2500000,
+                step=100000,
+                format="%d",
+                help="Typical value: 4-6 million cells/ml from healthy donor"
+            )
+            
+            # Add sliders for adjusting processing efficiency percentages
+            st.subheader("Processing Efficiency")
+            st.write("Adjust the percentage of cells that survive each processing step:")
+            
+            post_stain_pct = st.slider(
+                "Post-Stain (% of Pre-Stain):", 
+                min_value=10, 
+                max_value=100, 
+                value=35,
+                help="Typically 30-40% of cells survive staining and permeabilization"
+            )
+            
+            events_acquired_pct = st.slider(
+                "Events Acquired (% of Post-Stain):", 
+                min_value=50, 
+                max_value=100, 
+                value=95,
+                help="Typically 90-95% of stained cells are successfully acquired by the instrument"
+            )
+            
+            viable_cells_pct = st.slider(
+                "Single, Viable Cells (% of Events Acquired):", 
+                min_value=50, 
+                max_value=100, 
+                value=80,
+                help="Typically 70-80% of acquired events are single, viable cells after gating"
+            )
+            
+            # Define processing efficiency percentages (based on the waterfall diagram but with adjustable values)
+            processing_steps = {
+                "Pre-Stain": {"percent_of_previous": 1.0, "description": "Isolated PBMCs"}, 
+                "Post-Stain": {"percent_of_previous": post_stain_pct/100, "description": "After staining, antibody binding, and permeabilization"},
+                "Events Acquired": {"percent_of_previous": events_acquired_pct/100, "description": "Cells successfully measured by the flow cytometer"},
+                "Single, Viable Cells": {"percent_of_previous": viable_cells_pct/100, "description": "Final cells after excluding doublets and dead cells"} 
+            }
+            
+            # Calculate waterfall of cell counts
+            current_count = starting_cells
+            cell_counts_waterfall = {}
+            
+            for step, info in processing_steps.items():
+                current_count = int(current_count * info["percent_of_previous"])
+                cell_counts_waterfall[step] = current_count
+            
+            # Display the waterfall as a table
+            st.write("**Cell Processing Waterfall:**")
+            waterfall_data = []
+            for step, count in cell_counts_waterfall.items():
+                waterfall_data.append({
+                    "Processing Step": step,
+                    "Cell Count": f"{count:,}"
+                })
+            
+            waterfall_df = pd.DataFrame(waterfall_data)
+            st.dataframe(waterfall_df, use_container_width=True, hide_index=True)
+            
+            # Use the Single, Viable Cells as the input for Leukocytes
+            input_cells = cell_counts_waterfall["Single, Viable Cells"]
+            st.success(f"Analysis using {input_cells:,} Single, Viable Cells as input for Leukocytes")
+            
+            # Add Keeney's table reference
+            st.subheader("Keeney's Reference Table")
+            st.markdown("""
+            This table shows the total number of events needed to achieve specific CV percentages
+            for populations occurring at different frequencies.
+            """)
+            
+            # Generate and display Keeney's table
+            keeney_df = generate_keeney_table(
+                desired_cvs=[1, 5, 10, 20],
+                frequencies=[0.1, 0.01, 0.001, 0.0001]
+            )
+            
+            # Format the table for display
+            keeney_display = keeney_df.copy()
+            keeney_display['Fraction'] = keeney_display['Fraction'].apply(lambda x: f"{x:.4f}")
+            keeney_display = keeney_display.rename(columns={
+                'Fraction': 'Frequency',
+                '1:n': 'Ratio',
+                'CV 1%': 'For 1% CV',
+                'CV 5%': 'For 5% CV',
+                'CV 10%': 'For 10% CV',
+                'CV 20%': 'For 20% CV'
             })
-        
-        waterfall_df = pd.DataFrame(waterfall_data)
-        st.dataframe(waterfall_df, use_container_width=True, hide_index=True)
-        
-        # Use the Single, Viable Cells as the input for Leukocytes
-        input_cells = cell_counts_waterfall["Single, Viable Cells"]
-        st.success(f"Analysis using {input_cells:,} Single, Viable Cells as input for Leukocytes")
-        
-        # Add Keeney's table reference
-        st.subheader("Keeney's Reference Table")
-        st.markdown("""
-        This table shows the total number of events needed to achieve specific CV percentages
-        for populations occurring at different frequencies.
-        """)
-        
-        # Generate and display Keeney's table
-        keeney_df = generate_keeney_table(
-            desired_cvs=[1, 5, 10, 20],
-            frequencies=[0.1, 0.01, 0.001, 0.0001]
-        )
-        
-        # Format the table for display
-        keeney_display = keeney_df.copy()
-        keeney_display['Fraction'] = keeney_display['Fraction'].apply(lambda x: f"{x:.4f}")
-        keeney_display = keeney_display.rename(columns={
-            'Fraction': 'Frequency',
-            '1:n': 'Ratio',
-            'CV 1%': 'For 1% CV',
-            'CV 5%': 'For 5% CV',
-            'CV 10%': 'For 10% CV',
-            'CV 20%': 'For 20% CV'
-        })
-        
-        st.dataframe(keeney_display, use_container_width=True)
+            
+            st.dataframe(keeney_display, use_container_width=True)
+        else:
+            # Reverse calculation mode
+            st.subheader("Target Settings")
+            
+            # Get all leaf populations for selection
+            leaf_populations = [cell for cell in db.get_hierarchy() if not db.get_children(cell)]
+            target_population = st.selectbox(
+                "Target Population",
+                options=leaf_populations,
+                help="Select the population you want to analyze"
+            )
+            
+            target_cv = st.slider(
+                "Target CV (%)", 
+                min_value=1, 
+                max_value=20, 
+                value=10,
+                help="Select your desired CV target"
+            )
+            
+            # Calculate the frequency of the selected population
+            hierarchy = db.get_hierarchy()
+            def get_cumulative_proportion(population):
+                proportion = 1.0
+                current = population
+                while current in hierarchy:
+                    proportion *= hierarchy[current]["proportion"]
+                    current = db.get_parent(current)
+                return proportion
+            
+            population_frequency = get_cumulative_proportion(target_population)
+            
+            st.info(f"""
+            Based on the hierarchy, {target_population} represents approximately 
+            {population_frequency:.4%} of total leukocytes
+            """)
+            
+            # Calculate required events using Keeney's formula
+            required_events = int((100/target_cv)**2 / population_frequency)
+            
+            # Calculate required input cells based on processing efficiencies
+            total_efficiency = (35/100) * (95/100) * (80/100)  # Using default processing efficiencies
+            required_input_cells = int(required_events / total_efficiency)
+            
+            st.success(f"""
+            To achieve {target_cv}% CV for {target_population}:
+            - Required events: {required_events:,}
+            - Required input cells: {required_input_cells:,}
+            
+            (Using standard processing efficiencies)
+            """)
+            
+            # Store these for use in other tabs
+            starting_cells = required_input_cells
+            post_stain_pct = 35
+            events_acquired_pct = 95
+            viable_cells_pct = 80
     
     # Calculate results
     cell_counts = calculate_cell_counts(input_cells)
@@ -226,44 +292,81 @@ def main():
     # Sort by CV value for some displays
     df_sorted = df.sort_values(by="CV Value")
     
-    # Create tabs for different views
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "Table View", 
-        "Tree View", 
-        "CV Analysis",
-        "Cell Distribution",
-        "Cell Processing"
-    ])
-    
-    with tab1:
-        st.subheader("Estimated Cell Counts and CV")
+    # Create tabs based on analysis mode
+    if analysis_mode.startswith("Forward"):
+        # Show all tabs for forward mode
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            "Table View", 
+            "Tree View", 
+            "CV Analysis",
+            "Cell Distribution",
+            "Cell Processing"
+        ])
+    else:
+        # Show focused tabs for reverse mode
+        tab1, tab3, tab5 = st.tabs([
+            "Required Cells Summary",
+            "CV Analysis",
+            "Cell Processing"
+        ])
         
-        # Filter controls
-        col1, col2 = st.columns(2)
-        with col1:
-            min_cv = st.slider("Min CV (%)", 0.0, 50.0, 0.0)
-        with col2:
-            max_cv = st.slider("Max CV (%)", 0.0, 50.0, 50.0)
-        
-        # Apply filters
-        filtered_df = df[
-            (df["CV Value"] >= min_cv) & 
-            (df["CV Value"] <= max_cv)
-        ].sort_values(by="CV Value")
-        
-        # Display columns needed for the table view
-        display_df = filtered_df[["Population", "Parent", "Cell Count", "% of Parent", "CV (%)", "CV Quality"]]
-        
-        st.dataframe(display_df, use_container_width=True)
-        
-        # Allow downloading as CSV
-        csv = display_df.to_csv(index=False)
-        st.download_button(
-            label="Download as CSV",
-            data=csv,
-            file_name=f"cell_counts_{input_cells/1000:.0f}K.csv",
-            mime="text/csv"
-        )
+    if analysis_mode.startswith("Forward"):
+        with tab1:
+            st.subheader("Estimated Cell Counts and CV")
+            
+            # Filter controls
+            col1, col2 = st.columns(2)
+            with col1:
+                min_cv = st.slider("Min CV (%)", 0.0, 50.0, 0.0)
+            with col2:
+                max_cv = st.slider("Max CV (%)", 0.0, 50.0, 50.0)
+            
+            # Apply filters
+            filtered_df = df[
+                (df["CV Value"] >= min_cv) & 
+                (df["CV Value"] <= max_cv)
+            ].sort_values(by="CV Value")
+            
+            # Display columns needed for the table view
+            display_df = filtered_df[["Population", "Parent", "Cell Count", "% of Parent", "CV (%)", "CV Quality"]]
+            
+            st.dataframe(display_df, use_container_width=True)
+            
+            # Allow downloading as CSV
+            csv = display_df.to_csv(index=False)
+            st.download_button(
+                label="Download as CSV",
+                data=csv,
+                file_name=f"cell_counts_{input_cells/1000:.0f}K.csv",
+                mime="text/csv"
+            )
+    else:
+        with tab1:
+            st.subheader(f"Required Cells for {target_population}")
+            
+            # Create a summary card
+            st.markdown(f"""
+            ### Target Settings
+            - **Population:** {target_population}
+            - **Target CV:** {target_cv}%
+            - **Population Frequency:** {population_frequency:.4%}
+            
+            ### Required Numbers
+            - **Events Needed:** {required_events:,}
+            - **Input Cells Needed:** {required_input_cells:,}
+            
+            ### Processing Assumptions
+            - Post-Stain Recovery: 35%
+            - Events Acquired: 95%
+            - Single, Viable Cells: 80%
+            - Overall Processing Efficiency: {(35/100 * 95/100 * 80/100)*100:.1f}%
+            """)
+            
+            st.info("""
+            💡 **Note:** These calculations use Keeney's formula (r = (100/CV)²) and account for typical 
+            cell losses during processing. Adjust processing efficiencies in the Cell Processing tab 
+            if your protocol differs.
+            """)
     
     with tab2:
         st.subheader("Cell Population Hierarchy")
