@@ -259,11 +259,68 @@ def main():
             (Using standard processing efficiencies)
             """)
             
-            # Store these for use in other tabs
+            # Set starting cells for the rest of the calculations
             starting_cells = required_input_cells
-            post_stain_pct = 35
-            events_acquired_pct = 95
-            viable_cells_pct = 80
+        
+        # Add sliders for adjusting processing efficiency percentages (common to both modes)
+        st.subheader("Processing Efficiency")
+        st.write("Adjust the percentage of cells that survive each processing step:")
+        
+        post_stain_pct = st.slider(
+            "Post-Stain (% of Pre-Stain):", 
+            min_value=10, 
+            max_value=100, 
+            value=35,
+            help="Typically 30-40% of cells survive staining and permeabilization"
+        )
+        
+        events_acquired_pct = st.slider(
+            "Events Acquired (% of Post-Stain):", 
+            min_value=50, 
+            max_value=100, 
+            value=95,
+            help="Typically 90-95% of stained cells are successfully acquired by the instrument"
+        )
+        
+        viable_cells_pct = st.slider(
+            "Single, Viable Cells (% of Events Acquired):", 
+            min_value=50, 
+            max_value=100, 
+            value=80,
+            help="Typically 70-80% of acquired events are single, viable cells after gating"
+        )
+        
+        # Define processing efficiency percentages (common to both modes)
+        processing_steps = {
+            "Pre-Stain": {"percent_of_previous": 1.0, "description": "Isolated PBMCs"}, 
+            "Post-Stain": {"percent_of_previous": post_stain_pct/100, "description": "After staining, antibody binding, and permeabilization"},
+            "Events Acquired": {"percent_of_previous": events_acquired_pct/100, "description": "Cells successfully measured by the flow cytometer"},
+            "Single, Viable Cells": {"percent_of_previous": viable_cells_pct/100, "description": "Final cells after excluding doublets and dead cells"} 
+        }
+        
+        # Calculate waterfall of cell counts (common to both modes)
+        current_count = starting_cells
+        cell_counts_waterfall = {}
+        
+        for step, info in processing_steps.items():
+            current_count = int(current_count * info["percent_of_previous"])
+            cell_counts_waterfall[step] = current_count
+        
+        # Display the waterfall as a table
+        st.write("**Cell Processing Waterfall:**")
+        waterfall_data = []
+        for step, count in cell_counts_waterfall.items():
+            waterfall_data.append({
+                "Processing Step": step,
+                "Cell Count": f"{count:,}"
+            })
+        
+        waterfall_df = pd.DataFrame(waterfall_data)
+        st.dataframe(waterfall_df, use_container_width=True, hide_index=True)
+        
+        # Use the Single, Viable Cells as the input for Leukocytes
+        input_cells = cell_counts_waterfall["Single, Viable Cells"]
+        st.success(f"Analysis using {input_cells:,} Single, Viable Cells as input for Leukocytes")
     
     # Calculate results
     cell_counts = calculate_cell_counts(input_cells)
