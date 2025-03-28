@@ -71,6 +71,11 @@ def calculate_cell_counts(input_cells, hierarchy=None):
     return cell_counts
 
 def main():
+    # Define default processing efficiency values to prevent UnboundLocalError
+    post_stain_pct = 35
+    events_acquired_pct = 95
+    viable_cells_pct = 80
+
     st.set_page_config(
         page_title="Flow Cytometry Cell Population Calculator",
         page_icon="🔬",
@@ -117,7 +122,7 @@ def main():
             "Post-Stain (% of Pre-Stain):", 
             min_value=10, 
             max_value=100, 
-            value=35,
+            value=post_stain_pct,
             key="post_stain_pct",
             help="Typically 30-40% of cells survive staining and permeabilization"
         )
@@ -126,7 +131,7 @@ def main():
             "Events Acquired (% of Post-Stain):", 
             min_value=50, 
             max_value=100, 
-            value=95,
+            value=events_acquired_pct,
             key="events_acquired_pct",
             help="Typically 90-95% of stained cells are successfully acquired by the instrument"
         )
@@ -135,7 +140,7 @@ def main():
             "Single, Viable Cells (% of Events Acquired):", 
             min_value=50, 
             max_value=100, 
-            value=80,
+            value=viable_cells_pct,
             key="viable_cells_pct",
             help="Typically 70-80% of acquired events are single, viable cells after gating"
         )
