@@ -85,18 +85,80 @@ def calculate_cell_counts(input_cells, hierarchy=None):
     return cell_counts
 
 def main():
-    # Define default processing efficiency values
-    post_stain_pct = DEFAULT_POST_STAIN_PCT
-    events_acquired_pct = DEFAULT_EVENTS_ACQUIRED_PCT
-    viable_cells_pct = DEFAULT_VIABLE_CELLS_PCT
-
     st.set_page_config(
         page_title="Flow Cytometry Cell Population Calculator",
         page_icon="🔬",
         layout="wide",
         initial_sidebar_state="expanded"
     )
-    
+
+    # Initialize session state for mode selection if not exists
+    if 'mode_selected' not in st.session_state:
+        st.session_state.mode_selected = False
+        st.session_state.analysis_mode = None
+
+    # Show splash screen if mode not selected
+    if not st.session_state.mode_selected:
+        st.title("Flow Cytometry Cell Population Calculator")
+        
+        st.markdown("""
+        ### Welcome! Choose your analysis mode:
+        """)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("🔄 Forward Analysis", use_container_width=True, help="Calculate population counts from input cell amounts"):
+                st.session_state.mode_selected = True
+                st.session_state.analysis_mode = "Forward"
+                st.rerun()
+                
+            st.markdown("""
+            #### Forward Analysis
+            Start with your input cells and calculate:
+            - Expected cell counts for each population
+            - CV values and quality assessment
+            - Processing efficiency impact
+            """)
+            
+        with col2:
+            if st.button("🎯 Reverse Analysis", use_container_width=True, help="Determine required input cells for a target population and CV"):
+                st.session_state.mode_selected = True
+                st.session_state.analysis_mode = "Reverse"
+                st.rerun()
+                
+            st.markdown("""
+            #### Reverse Analysis
+            Start with your target population and:
+            - Specify desired CV
+            - Calculate required input cells
+            - Optimize processing parameters
+            """)
+            
+        # Add about section at the bottom of splash screen
+        with st.expander("About this app", expanded=False):
+            st.markdown("""
+            This app estimates the number of cells in each population based on the initial input cell count
+            and calculates the expected coefficient of variation (CV) using Keeney's formula: r = (100/CV)².
+            
+            **Key features:**
+            - Enter any input cell count (starting from 10K)
+            - View estimated cell counts for each population in the hierarchy
+            - Analyze expected CV for each population
+            - Identify populations with potentially unreliable measurements (high CV)
+            
+            **References:**
+            - Keeney et al. formula for CV calculation: r = (100/CV)²
+            - Hierarchy based on Peripheral Blood Mononuclear Cell (PBMC) standard
+            """)
+        
+        return  # Exit here if mode not selected
+
+    # Define default processing efficiency values
+    post_stain_pct = DEFAULT_POST_STAIN_PCT
+    events_acquired_pct = DEFAULT_EVENTS_ACQUIRED_PCT
+    viable_cells_pct = DEFAULT_VIABLE_CELLS_PCT
+
     # Title and description
     st.title("Flow Cytometry Cell Population Calculator")
     
@@ -120,16 +182,17 @@ def main():
     with st.sidebar:
         st.header("Input Settings")
         
-        # Add mode selector as first control
-        analysis_mode = st.radio(
-            "Analysis Mode",
-            ["Forward: Calculate population counts from input cell amounts",
-             "Reverse: Determine required input cells for a target population and CV"],
-            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
-        )
+        # Add mode display and reset button
+        mode_col1, mode_col2 = st.columns([3, 1])
+        with mode_col1:
+            st.markdown(f"**Current Mode:** {'Forward' if st.session_state.analysis_mode == 'Forward' else 'Reverse'} Analysis")
+        with mode_col2:
+            if st.button("Change Mode"):
+                st.session_state.mode_selected = False
+                st.rerun()
         
         # Conditionally show sections based on analysis mode
-        if analysis_mode.startswith("Forward"):
+        if st.session_state.analysis_mode == "Forward":
             # Show Sample Processing before Processing Efficiency in Forward mode
             st.subheader("Sample Processing")
             starting_cells = st.number_input(
@@ -298,7 +361,7 @@ def main():
     df = pd.DataFrame(results)
     
     # Create tabs based on analysis mode
-    if analysis_mode.startswith("Forward"):
+    if st.session_state.analysis_mode == "Forward":
         # Show all tabs for forward mode
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "Table View", 
@@ -317,7 +380,7 @@ def main():
             "Cell Processing"
         ])
     
-    if analysis_mode.startswith("Forward"):
+    if st.session_state.analysis_mode == "Forward":
         with tab1:
             display_table_view(df, input_cells)
     else:
@@ -362,7 +425,7 @@ def main():
             """)
     
     with tab2:
-        if analysis_mode.startswith("Forward"):
+        if st.session_state.analysis_mode == "Forward":
             st.subheader("Cell Population Hierarchy")
             
             # Add view type selection
@@ -396,7 +459,7 @@ def main():
         display_cv_analysis(df, db)
     
     with tab4:
-        if analysis_mode.startswith("Forward"):
+        if st.session_state.analysis_mode == "Forward":
             display_cell_distribution(df, input_cells)
         else:
             st.info("Cell distribution view is only available in Forward Analysis mode")
