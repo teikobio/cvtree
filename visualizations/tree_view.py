@@ -149,7 +149,16 @@ def create_interactive_tree(cell_counts, db):
             showgrid=False,
             zeroline=False,
             showticklabels=False,
+        ),
+        font=dict(
+            color='black'  # Set text color to black for better visibility
         )
+    )
+    
+    # Update node text color
+    fig.update_traces(
+        textfont=dict(color='black'),  # Set node label color to black
+        selector=dict(type='scatter')
     )
     
     return fig
