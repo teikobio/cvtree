@@ -339,19 +339,19 @@ def main():
             st.markdown("### Processing Assumptions")
             
             st.markdown(
-                f"- Post-Stain Recovery: {post_stain_pct}% (?)",
+                f"- Post-Stain Recovery: {post_stain_pct}%",
                 help="Percentage of cells that survive staining, antibody binding, and permeabilization steps"
             )
             st.markdown(
-                f"- Events Acquired: {events_acquired_pct}% (?)",
+                f"- Events Acquired: {events_acquired_pct}%",
                 help="Percentage of stained cells successfully measured by the flow cytometer"
             )
             st.markdown(
-                f"- Single, Viable Cells: {viable_cells_pct}% (?)",
+                f"- Single, Viable Cells: {viable_cells_pct}%",
                 help="Percentage of acquired events that are single, viable cells after excluding doublets and dead cells"
             )
             st.markdown(
-                f"- Overall Processing Efficiency: {total_efficiency:.1%} (?)",
+                f"- Overall Processing Efficiency: {total_efficiency:.1%}",
                 help="Combined effect of all processing steps - multiply all percentages to get this value"
             )
             
