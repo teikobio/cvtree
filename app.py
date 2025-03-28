@@ -101,7 +101,15 @@ def main():
     with st.sidebar:
         st.header("Input Settings")
         
-        # Add processing efficiency sliders before mode selection
+        # Add mode selector as first control
+        analysis_mode = st.radio(
+            "Analysis Mode",
+            ["Forward: Calculate population counts from input cell amounts",
+             "Reverse: Determine required input cells for a target population and CV"],
+            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
+        )
+        
+        # Add processing efficiency sliders after mode selection
         st.subheader("Processing Efficiency")
         st.write("Adjust the percentage of cells that survive each processing step:")
         
@@ -704,20 +712,6 @@ def main():
             
             fig.update_layout(height=700)
             st.plotly_chart(fig, use_container_width=True)
-            
-            # Also add a sunburst chart as an alternative visualization
-            fig2 = px.sunburst(
-                df,
-                path=['Parent', 'Population'],
-                values='Cell Count',
-                color='CV Value',
-                color_continuous_scale='RdYlGn_r',
-                title=f"Sunburst Chart of Cell Distribution ({input_cells/1000:.1f}K Input Cells)",
-                hover_data=['CV (%)', 'CV Quality']
-            )
-            
-            fig2.update_layout(height=700)
-            st.plotly_chart(fig2, use_container_width=True)
         else:
             st.info("Cell distribution view is only available in Forward Analysis mode")
     
