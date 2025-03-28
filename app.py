@@ -204,7 +204,7 @@ def main():
                 format="%d",
                 help="Typical value: 4-6 million cells/ml from healthy donor"
             )
-        else:
+        elif st.session_state.analysis_mode == "Reverse":
             # Show Target Settings before Processing Efficiency in Reverse mode
             st.subheader("Target Population Settings")
             
@@ -218,10 +218,11 @@ def main():
             
             target_cv = st.slider(
                 "Target CV (%)", 
-                min_value=1, 
-                max_value=20, 
-                value=10,
-                help="Select your desired CV target"
+                min_value=0.1,
+                max_value=100.0,
+                value=20.0,
+                step=0.1,
+                help="Desired coefficient of variation for the target population"
             )
             
             # Calculate the frequency of the selected population
