@@ -147,15 +147,7 @@ def main():
             "Events Acquired": {"percent_of_previous": events_acquired_pct/100, "description": "Cells successfully measured by the flow cytometer"},
             "Single, Viable Cells": {"percent_of_previous": viable_cells_pct/100, "description": "Final cells after excluding doublets and dead cells"} 
         }
-        
-        # Add mode selector after sliders
-        analysis_mode = st.radio(
-            "Analysis Mode",
-            ["Forward: Input cells → Population counts",
-             "Reverse: Target CV → Required input cells"],
-            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
-        )
-        
+                
         if analysis_mode.startswith("Forward"):
             # Forward calculation mode
             st.subheader("Sample Processing")
