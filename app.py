@@ -128,37 +128,6 @@ def main():
             help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
         )
         
-        # Processing Efficiency section
-        st.subheader("Processing Efficiency")
-        st.write("Adjust the percentage of cells that survive each processing step:")
-        
-        post_stain_pct = st.slider(
-            "Post-Stain (% of Pre-Stain):", 
-            min_value=10, 
-            max_value=100, 
-            value=post_stain_pct,
-            key="post_stain_pct",
-            help="Typically 30-40% of cells survive staining and permeabilization"
-        )
-        
-        events_acquired_pct = st.slider(
-            "Events Acquired (% of Post-Stain):", 
-            min_value=50, 
-            max_value=100, 
-            value=events_acquired_pct,
-            key="events_acquired_pct",
-            help="Typically 90-95% of stained cells are successfully acquired by the instrument"
-        )
-        
-        viable_cells_pct = st.slider(
-            "Single, Viable Cells (% of Events Acquired):", 
-            min_value=50, 
-            max_value=100, 
-            value=viable_cells_pct,
-            key="viable_cells_pct",
-            help="Typically 70-80% of acquired events are single, viable cells after gating"
-        )
-        
         # Conditionally show sections based on analysis mode
         if analysis_mode.startswith("Forward"):
             # Show Sample Processing before Processing Efficiency in Forward mode
@@ -173,7 +142,7 @@ def main():
             )
         else:
             # Show Target Settings before Processing Efficiency in Reverse mode
-            st.subheader("Target Settings")
+            st.subheader("Target Population Settings")
             
             # Get all leaf populations for selection
             leaf_populations = [cell for cell in db.get_hierarchy() if not db.get_children(cell)]
@@ -225,6 +194,37 @@ def main():
             
             # Set starting cells for the rest of the calculations
             starting_cells = required_input_cells
+        
+        # Processing Efficiency section
+        st.subheader("Processing Efficiency")
+        st.write("Adjust the percentage of cells that survive each processing step:")
+        
+        post_stain_pct = st.slider(
+            "Post-Stain (% of Pre-Stain):", 
+            min_value=10, 
+            max_value=100, 
+            value=post_stain_pct,
+            key="post_stain_pct",
+            help="Typically 30-40% of cells survive staining and permeabilization"
+        )
+        
+        events_acquired_pct = st.slider(
+            "Events Acquired (% of Post-Stain):", 
+            min_value=50, 
+            max_value=100, 
+            value=events_acquired_pct,
+            key="events_acquired_pct",
+            help="Typically 90-95% of stained cells are successfully acquired by the instrument"
+        )
+        
+        viable_cells_pct = st.slider(
+            "Single, Viable Cells (% of Events Acquired):", 
+            min_value=50, 
+            max_value=100, 
+            value=viable_cells_pct,
+            key="viable_cells_pct",
+            help="Typically 70-80% of acquired events are single, viable cells after gating"
+        )
         
         # Update processing steps with current values
         processing_steps = {
@@ -334,13 +334,30 @@ def main():
             ### Required Numbers
             - **Events Needed:** {required_events:,}
             - **Input Cells Needed:** {required_input_cells:,}
-            
-            ### Processing Assumptions
-            - Post-Stain Recovery: {post_stain_pct}%
-            - Events Acquired: {events_acquired_pct}%
-            - Single, Viable Cells: {viable_cells_pct}%
-            - Overall Processing Efficiency: {total_efficiency:.1%}
             """)
+
+            st.markdown("### Processing Assumptions")
+            
+            # Create two columns for the processing assumptions
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                st.markdown(f"- Post-Stain Recovery: {post_stain_pct}%")
+                st.markdown(f"- Events Acquired: {events_acquired_pct}%")
+                st.markdown(f"- Single, Viable Cells: {viable_cells_pct}%")
+                st.markdown(f"- Overall Processing Efficiency: {total_efficiency:.1%}")
+            
+            with col2:
+                st.markdown("ℹ️ *Hover over each metric for details:*")
+                st.info("""
+                **Post-Stain Recovery:** Percentage of cells that survive staining, antibody binding, and permeabilization steps
+                
+                **Events Acquired:** Percentage of stained cells successfully measured by the flow cytometer
+                
+                **Single, Viable Cells:** Percentage of acquired events that are single, viable cells after excluding doublets and dead cells
+                
+                **Overall Processing Efficiency:** Combined effect of all processing steps - multiply all percentages to get this value
+                """)
             
             st.info("""
             💡 **Note:** These calculations use Keeney's formula (r = (100/CV)²) and account for 
