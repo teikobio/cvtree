@@ -205,7 +205,7 @@ def create_text_tree(cell_counts, db):
         
         # Add expand/collapse button if node has children
         if children:
-            button = f'<button class="tree-button" onclick="toggleNode(\'{node_id}\')" id="{node_id}_btn">-</button>'
+            button = f'<span class="tree-button" data-node="{node_id}" data-children="{children_id}">-</span>'
         else:
             button = '<span class="tree-spacer">  </span>'
             
@@ -268,9 +268,6 @@ def create_text_tree(cell_counts, db):
         background-color: #e0e0e0;
         border-color: #999;
     }
-    .tree-button:active {
-        background-color: #ccc;
-    }
     .tree-spacer {
         display: inline-block;
         width: 20px;
@@ -283,28 +280,43 @@ def create_text_tree(cell_counts, db):
         padding: 2px 0;
     }
     </style>
-    <script>
-    function toggleNode(nodeId) {
-        const childrenDiv = document.getElementById('children_' + nodeId.substring(5));
-        const button = document.getElementById(nodeId + '_btn');
-        if (childrenDiv.style.display === 'none') {
-            childrenDiv.style.display = 'block';
-            button.textContent = '-';
-        } else {
-            childrenDiv.style.display = 'none';
-            button.textContent = '+';
-        }
-    }
-    </script>
     """
     
     # Add tree lines
-    html += "<div class='tree-container'>"
+    html += "<div class='tree-container' id='tree-root'>"
     for line in tree_lines:
         html += line
     html += "</div>"
     
-    return html
+    # Add JavaScript at the end
+    html += """
+    <script>
+    // Wait for the DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add click handlers to all tree buttons
+        document.querySelectorAll('.tree-button').forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                const nodeId = this.getAttribute('data-node');
+                const childrenId = this.getAttribute('data-children');
+                const childrenDiv = document.getElementById(childrenId);
+                
+                if (childrenDiv.style.display === 'none') {
+                    childrenDiv.style.display = 'block';
+                    this.textContent = '-';
+                } else {
+                    childrenDiv.style.display = 'none';
+                    this.textContent = '+';
+                }
+            });
+        });
+    });
+    </script>
+    """
+    
+    # Use st.components.v1.html to properly render the interactive HTML
+    st.components.v1.html(html, height=800, scrolling=True)
+    
+    return None
 
 def display_cv_legend():
     """Display the CV quality legend"""
