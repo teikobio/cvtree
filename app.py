@@ -149,7 +149,7 @@ def main():
         )
         
         if analysis_mode.startswith("Forward"):
-            # Existing forward calculation mode
+            # Forward calculation mode
             st.subheader("Sample Processing")
             starting_cells = st.number_input(
                 "Absolute number of cells in blood (per ml):",
@@ -159,30 +159,6 @@ def main():
                 format="%d",
                 help="Typical value: 4-6 million cells/ml from healthy donor"
             )
-            
-            # Calculate waterfall of cell counts
-            current_count = starting_cells
-            cell_counts_waterfall = {}
-            
-            for step, info in processing_steps.items():
-                current_count = int(current_count * info["percent_of_previous"])
-                cell_counts_waterfall[step] = current_count
-            
-            # Display the waterfall as a table
-            st.write("**Cell Processing Waterfall:**")
-            waterfall_data = []
-            for step, count in cell_counts_waterfall.items():
-                waterfall_data.append({
-                    "Processing Step": step,
-                    "Cell Count": f"{count:,}"
-                })
-            
-            waterfall_df = pd.DataFrame(waterfall_data)
-            st.dataframe(waterfall_df, use_container_width=True, hide_index=True)
-            
-            # Use the Single, Viable Cells as the input for Leukocytes
-            input_cells = cell_counts_waterfall["Single, Viable Cells"]
-            st.success(f"Analysis using {input_cells:,} Single, Viable Cells as input for Leukocytes")
             
             # Add Keeney's table reference
             st.subheader("Keeney's Reference Table")
@@ -251,7 +227,7 @@ def main():
             required_events = int((100/target_cv)**2 / population_frequency)
             
             # Calculate required input cells based on processing efficiencies
-            total_efficiency = (35/100) * (95/100) * (80/100)  # Using default processing efficiencies
+            total_efficiency = (post_stain_pct/100) * (events_acquired_pct/100) * (viable_cells_pct/100)
             required_input_cells = int(required_events / total_efficiency)
             
             st.success(f"""
@@ -259,11 +235,19 @@ def main():
             - Required events: {required_events:,}
             - Required input cells: {required_input_cells:,}
             
-            (Using standard processing efficiencies)
+            (Using current processing efficiencies: {total_efficiency:.1%} overall)
             """)
             
             # Set starting cells for the rest of the calculations
             starting_cells = required_input_cells
+        
+        # Calculate waterfall of cell counts (common to both modes)
+        current_count = starting_cells
+        cell_counts_waterfall = {}
+        
+        for step, info in processing_steps.items():
+            current_count = int(current_count * info["percent_of_previous"])
+            cell_counts_waterfall[step] = current_count
         
         # Display the waterfall as a table
         st.write("**Cell Processing Waterfall:**")
@@ -327,7 +311,7 @@ def main():
             "Cell Distribution",  # Keep the tab but hide content if in reverse mode
             "Cell Processing"
         ])
-        
+    
     if analysis_mode.startswith("Forward"):
         with tab1:
             st.subheader("Estimated Cell Counts and CV")
@@ -374,16 +358,16 @@ def main():
             - **Input Cells Needed:** {required_input_cells:,}
             
             ### Processing Assumptions
-            - Post-Stain Recovery: 35%
-            - Events Acquired: 95%
-            - Single, Viable Cells: 80%
-            - Overall Processing Efficiency: {(35/100 * 95/100 * 80/100)*100:.1f}%
+            - Post-Stain Recovery: {post_stain_pct}%
+            - Events Acquired: {events_acquired_pct}%
+            - Single, Viable Cells: {viable_cells_pct}%
+            - Overall Processing Efficiency: {total_efficiency:.1%}
             """)
             
             st.info("""
-            💡 **Note:** These calculations use Keeney's formula (r = (100/CV)²) and account for typical 
-            cell losses during processing. Adjust processing efficiencies in the Cell Processing tab 
-            if your protocol differs.
+            💡 **Note:** These calculations use Keeney's formula (r = (100/CV)²) and account for 
+            cell losses during processing. Adjust processing efficiencies in the sidebar 
+            to see how they affect the required input cells.
             """)
     
     with tab2:
