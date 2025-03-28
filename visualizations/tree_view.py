@@ -164,7 +164,7 @@ def create_interactive_tree(cell_counts, db):
     return fig
 
 def create_text_tree(cell_counts, db):
-    """Create a text-based tree visualization"""
+    """Create a text-based tree visualization with collapsible nodes"""
     tree_lines = []
     
     def build_text_tree(node, level=0, is_last=False, prefix=""):
@@ -196,12 +196,27 @@ def create_text_tree(cell_counts, db):
         color = CV_QUALITY_COLORS[cv_quality]
         circle = f'<span style="color:{color}">●</span>'
         
-        line = f"{indent}{node}: {count_str}{percentage_str} - CV: {cv:.2f}% {circle}"
-        tree_lines.append(line)
-        
         # Get children
         children = db.get_children(node)
+        
+        # Create unique ID for this node
+        node_id = f"node_{node.replace(' ', '_')}"
+        children_id = f"children_{node.replace(' ', '_')}"
+        
+        # Add expand/collapse button if node has children
         if children:
+            button = f'<span class="tree-button" onclick="toggleNode(\'{node_id}\')" id="{node_id}_btn">-</span>'
+        else:
+            button = '<span class="tree-spacer">  </span>'
+            
+        line = f'<div class="tree-line">{indent}{button} {node}: {count_str}{percentage_str} - CV: {cv:.2f}% {circle}</div>'
+        
+        # Create container for this node and its children
+        if children:
+            tree_lines.append(f'<div id="{node_id}">')
+            tree_lines.append(line)
+            tree_lines.append(f'<div id="{children_id}" class="tree-children">')
+            
             new_prefix = prefix
             if level > 0:
                 new_prefix = prefix + ("    " if is_last else "│   ")
@@ -209,11 +224,16 @@ def create_text_tree(cell_counts, db):
             for i, child in enumerate(children):
                 is_last_child = (i == len(children) - 1)
                 build_text_tree(child, level + 1, is_last_child, new_prefix)
+            
+            tree_lines.append('</div>')  # Close children container
+            tree_lines.append('</div>')  # Close node container
+        else:
+            tree_lines.append(f'<div id="{node_id}">{line}</div>')
     
     # Start building the tree
     build_text_tree(db.get_root_node())
     
-    # Create HTML container
+    # Create HTML container with styles and JavaScript
     html = """
     <style>
     .tree-container {
@@ -225,13 +245,46 @@ def create_text_tree(cell_counts, db):
         background-color: #f5f5f5;
         border-radius: 5px;
     }
+    .tree-button {
+        display: inline-block;
+        width: 15px;
+        cursor: pointer;
+        user-select: none;
+        color: #666;
+    }
+    .tree-button:hover {
+        color: #000;
+    }
+    .tree-spacer {
+        display: inline-block;
+        width: 15px;
+    }
+    .tree-children {
+        display: block;
+    }
+    .tree-line {
+        padding: 2px 0;
+    }
     </style>
+    <script>
+    function toggleNode(nodeId) {
+        const childrenDiv = document.getElementById('children_' + nodeId.substring(5));
+        const button = document.getElementById(nodeId + '_btn');
+        if (childrenDiv.style.display === 'none') {
+            childrenDiv.style.display = 'block';
+            button.textContent = '-';
+        } else {
+            childrenDiv.style.display = 'none';
+            button.textContent = '+';
+        }
+    }
+    </script>
     """
     
     # Add tree lines
     html += "<div class='tree-container'>"
     for line in tree_lines:
-        html += f"{line}<br>"
+        html += line
     html += "</div>"
     
     return html
