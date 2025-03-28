@@ -101,14 +101,6 @@ def main():
     with st.sidebar:
         st.header("Input Settings")
         
-        # Add mode selector after sliders
-        analysis_mode = st.radio(
-            "Analysis Mode",
-            ["Forward: Calculate population counts from input cells",
-             "Reverse: Determine required input cells for a target population and CV"],
-            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
-        )
-        
         # Add processing efficiency sliders before mode selection
         st.subheader("Processing Efficiency")
         st.write("Adjust the percentage of cells that survive each processing step:")
@@ -148,6 +140,14 @@ def main():
             "Single, Viable Cells": {"percent_of_previous": viable_cells_pct/100, "description": "Final cells after excluding doublets and dead cells"} 
         }
         
+        # Add mode selector after sliders
+        analysis_mode = st.radio(
+            "Analysis Mode",
+            ["Forward: Input cells → Population counts",
+             "Reverse: Target CV → Required input cells"],
+            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
+        )
+        
         if analysis_mode.startswith("Forward"):
             # Forward calculation mode
             st.subheader("Sample Processing")
@@ -160,32 +160,32 @@ def main():
                 help="Typical value: 4-6 million cells/ml from healthy donor"
             )
         
-            # Add Keeney's table reference
-            st.subheader("Keeney's Reference Table")
-            st.markdown("""
-            This table shows the total number of events needed to achieve specific CV percentages
-            for populations occurring at different frequencies.
-            """)
-            
-            # Generate and display Keeney's table
-            keeney_df = generate_keeney_table(
-                desired_cvs=[1, 5, 10, 20],
-                frequencies=[0.1, 0.01, 0.001, 0.0001]
-            )
-            
-            # Format the table for display
-            keeney_display = keeney_df.copy()
-            keeney_display['Fraction'] = keeney_display['Fraction'].apply(lambda x: f"{x:.4f}")
-            keeney_display = keeney_display.rename(columns={
-                'Fraction': 'Frequency',
-                '1:n': 'Ratio',
-                'CV 1%': 'For 1% CV',
-                'CV 5%': 'For 5% CV',
-                'CV 10%': 'For 10% CV',
-                'CV 20%': 'For 20% CV'
-            })
-            
-            st.dataframe(keeney_display, use_container_width=True)
+        # Add Keeney's table reference
+        st.subheader("Keeney's Reference Table")
+        st.markdown("""
+        This table shows the total number of events needed to achieve specific CV percentages
+        for populations occurring at different frequencies.
+        """)
+        
+        # Generate and display Keeney's table
+        keeney_df = generate_keeney_table(
+            desired_cvs=[1, 5, 10, 20],
+            frequencies=[0.1, 0.01, 0.001, 0.0001]
+        )
+        
+        # Format the table for display
+        keeney_display = keeney_df.copy()
+        keeney_display['Fraction'] = keeney_display['Fraction'].apply(lambda x: f"{x:.4f}")
+        keeney_display = keeney_display.rename(columns={
+            'Fraction': 'Frequency',
+            '1:n': 'Ratio',
+            'CV 1%': 'For 1% CV',
+            'CV 5%': 'For 5% CV',
+            'CV 10%': 'For 10% CV',
+            'CV 20%': 'For 20% CV'
+        })
+        
+        st.dataframe(keeney_display, use_container_width=True)
         else:
             # Reverse calculation mode
             st.subheader("Target Settings")
