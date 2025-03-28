@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import numpy as np
 import igraph as ig
 from config.settings import CV_QUALITY_COLORS, TREE_VIEW_HEIGHT
+from cv_calculator import calculate_cv, categorize_cv
 
 def create_interactive_tree(cell_counts, db):
     """Create an interactive tree visualization using Plotly"""
