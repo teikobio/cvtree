@@ -450,6 +450,22 @@ def main():
                     ]
                 })
             else:
+                # Create a container with scrollable content
+                st.markdown("""
+                <style>
+                .tree-container {
+                    max-height: 800px;
+                    overflow-y: auto;
+                    font-family: monospace;
+                    white-space: nowrap;
+                    padding: 10px;
+                    background-color: #f5f5f5;
+                    border-radius: 5px;
+                    color: #000000;  /* Set text color to black for visibility */
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
                 html = create_text_tree(cell_counts, db)
                 st.markdown(html, unsafe_allow_html=True)
             
