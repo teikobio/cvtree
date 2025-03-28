@@ -109,6 +109,37 @@ def main():
             help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
         )
         
+        # Processing Efficiency section (MOVED BEFORE mode-specific sections)
+        st.subheader("Processing Efficiency")
+        st.write("Adjust the percentage of cells that survive each processing step:")
+        
+        post_stain_pct = st.slider(
+            "Post-Stain (% of Pre-Stain):", 
+            min_value=10, 
+            max_value=100, 
+            value=35,
+            key="post_stain_pct",
+            help="Typically 30-40% of cells survive staining and permeabilization"
+        )
+        
+        events_acquired_pct = st.slider(
+            "Events Acquired (% of Post-Stain):", 
+            min_value=50, 
+            max_value=100, 
+            value=95,
+            key="events_acquired_pct",
+            help="Typically 90-95% of stained cells are successfully acquired by the instrument"
+        )
+        
+        viable_cells_pct = st.slider(
+            "Single, Viable Cells (% of Events Acquired):", 
+            min_value=50, 
+            max_value=100, 
+            value=80,
+            key="viable_cells_pct",
+            help="Typically 70-80% of acquired events are single, viable cells after gating"
+        )
+        
         # Conditionally show sections based on analysis mode
         if analysis_mode.startswith("Forward"):
             # Show Sample Processing before Processing Efficiency in Forward mode
@@ -175,37 +206,6 @@ def main():
             
             # Set starting cells for the rest of the calculations
             starting_cells = required_input_cells
-        
-        # Processing Efficiency section (now placed after mode-specific sections)
-        st.subheader("Processing Efficiency")
-        st.write("Adjust the percentage of cells that survive each processing step:")
-        
-        post_stain_pct = st.slider(
-            "Post-Stain (% of Pre-Stain):", 
-            min_value=10, 
-            max_value=100, 
-            value=35,
-            key="post_stain_pct",
-            help="Typically 30-40% of cells survive staining and permeabilization"
-        )
-        
-        events_acquired_pct = st.slider(
-            "Events Acquired (% of Post-Stain):", 
-            min_value=50, 
-            max_value=100, 
-            value=95,
-            key="events_acquired_pct",
-            help="Typically 90-95% of stained cells are successfully acquired by the instrument"
-        )
-        
-        viable_cells_pct = st.slider(
-            "Single, Viable Cells (% of Events Acquired):", 
-            min_value=50, 
-            max_value=100, 
-            value=80,
-            key="viable_cells_pct",
-            help="Typically 70-80% of acquired events are single, viable cells after gating"
-        )
         
         # Define processing efficiency percentages
         processing_steps = {
