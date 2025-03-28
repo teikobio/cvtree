@@ -101,6 +101,14 @@ def main():
     with st.sidebar:
         st.header("Input Settings")
         
+        # Add mode selector after sliders
+        analysis_mode = st.radio(
+            "Analysis Mode",
+            ["Forward: Calculate population counts from input cells",
+             "Reverse: Determine required input cells for a target population and CV"],
+            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
+        )
+        
         # Add processing efficiency sliders before mode selection
         st.subheader("Processing Efficiency")
         st.write("Adjust the percentage of cells that survive each processing step:")
@@ -140,14 +148,6 @@ def main():
             "Single, Viable Cells": {"percent_of_previous": viable_cells_pct/100, "description": "Final cells after excluding doublets and dead cells"} 
         }
         
-        # Add mode selector after sliders
-        analysis_mode = st.radio(
-            "Analysis Mode",
-            ["Forward: Input cells → Population counts",
-             "Reverse: Target CV → Required input cells"],
-            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
-        )
-        
         if analysis_mode.startswith("Forward"):
             # Forward calculation mode
             st.subheader("Sample Processing")
@@ -159,33 +159,33 @@ def main():
                 format="%d",
                 help="Typical value: 4-6 million cells/ml from healthy donor"
             )
-            
-            # Add Keeney's table reference
-            st.subheader("Keeney's Reference Table")
-            st.markdown("""
-            This table shows the total number of events needed to achieve specific CV percentages
-            for populations occurring at different frequencies.
-            """)
-            
-            # Generate and display Keeney's table
-            keeney_df = generate_keeney_table(
-                desired_cvs=[1, 5, 10, 20],
-                frequencies=[0.1, 0.01, 0.001, 0.0001]
-            )
-            
-            # Format the table for display
-            keeney_display = keeney_df.copy()
-            keeney_display['Fraction'] = keeney_display['Fraction'].apply(lambda x: f"{x:.4f}")
-            keeney_display = keeney_display.rename(columns={
-                'Fraction': 'Frequency',
-                '1:n': 'Ratio',
-                'CV 1%': 'For 1% CV',
-                'CV 5%': 'For 5% CV',
-                'CV 10%': 'For 10% CV',
-                'CV 20%': 'For 20% CV'
-            })
-            
-            st.dataframe(keeney_display, use_container_width=True)
+        
+        # Add Keeney's table reference
+        st.subheader("Keeney's Reference Table")
+        st.markdown("""
+        This table shows the total number of events needed to achieve specific CV percentages
+        for populations occurring at different frequencies.
+        """)
+        
+        # Generate and display Keeney's table
+        keeney_df = generate_keeney_table(
+            desired_cvs=[1, 5, 10, 20],
+            frequencies=[0.1, 0.01, 0.001, 0.0001]
+        )
+        
+        # Format the table for display
+        keeney_display = keeney_df.copy()
+        keeney_display['Fraction'] = keeney_display['Fraction'].apply(lambda x: f"{x:.4f}")
+        keeney_display = keeney_display.rename(columns={
+            'Fraction': 'Frequency',
+            '1:n': 'Ratio',
+            'CV 1%': 'For 1% CV',
+            'CV 5%': 'For 5% CV',
+            'CV 10%': 'For 10% CV',
+            'CV 20%': 'For 20% CV'
+        })
+        
+        st.dataframe(keeney_display, use_container_width=True)
         else:
             # Reverse calculation mode
             st.subheader("Target Settings")
@@ -296,9 +296,9 @@ def main():
     if analysis_mode.startswith("Forward"):
         # Show all tabs for forward mode
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
-            "Table View", 
-            "Tree View", 
-            "CV Analysis",
+        "Table View", 
+        "Tree View", 
+        "CV Analysis",
             "Cell Distribution",
             "Cell Processing"
         ])
@@ -313,35 +313,35 @@ def main():
         ])
     
     if analysis_mode.startswith("Forward"):
-        with tab1:
-            st.subheader("Estimated Cell Counts and CV")
-            
-            # Filter controls
-            col1, col2 = st.columns(2)
-            with col1:
-                min_cv = st.slider("Min CV (%)", 0.0, 50.0, 0.0)
-            with col2:
-                max_cv = st.slider("Max CV (%)", 0.0, 50.0, 50.0)
-            
-            # Apply filters
-            filtered_df = df[
-                (df["CV Value"] >= min_cv) & 
-                (df["CV Value"] <= max_cv)
-            ].sort_values(by="CV Value")
-            
-            # Display columns needed for the table view
-            display_df = filtered_df[["Population", "Parent", "Cell Count", "% of Parent", "CV (%)", "CV Quality"]]
-            
-            st.dataframe(display_df, use_container_width=True)
-            
-            # Allow downloading as CSV
-            csv = display_df.to_csv(index=False)
-            st.download_button(
-                label="Download as CSV",
-                data=csv,
-                file_name=f"cell_counts_{input_cells/1000:.0f}K.csv",
-                mime="text/csv"
-            )
+    with tab1:
+        st.subheader("Estimated Cell Counts and CV")
+        
+        # Filter controls
+        col1, col2 = st.columns(2)
+        with col1:
+            min_cv = st.slider("Min CV (%)", 0.0, 50.0, 0.0)
+        with col2:
+            max_cv = st.slider("Max CV (%)", 0.0, 50.0, 50.0)
+        
+        # Apply filters
+        filtered_df = df[
+            (df["CV Value"] >= min_cv) & 
+            (df["CV Value"] <= max_cv)
+        ].sort_values(by="CV Value")
+        
+        # Display columns needed for the table view
+        display_df = filtered_df[["Population", "Parent", "Cell Count", "% of Parent", "CV (%)", "CV Quality"]]
+        
+        st.dataframe(display_df, use_container_width=True)
+        
+        # Allow downloading as CSV
+        csv = display_df.to_csv(index=False)
+        st.download_button(
+            label="Download as CSV",
+            data=csv,
+            file_name=f"cell_counts_{input_cells/1000:.0f}K.csv",
+            mime="text/csv"
+        )
     else:
         with tab1:
             st.subheader(f"Required Cells for {target_population}")
@@ -372,8 +372,8 @@ def main():
     
     with tab2:
         if analysis_mode.startswith("Forward"):
-            st.subheader("Cell Population Hierarchy")
-            
+        st.subheader("Cell Population Hierarchy")
+        
             # Add view type selection
             view_type = st.radio(
                 "Select visualization type:",
@@ -465,7 +465,7 @@ def main():
                 
                 for i, node in enumerate(nodes):
                     count = cell_counts[node]
-                    cv = calculate_cv(count)
+            cv = calculate_cv(count)
                     cv_quality = categorize_cv(cv)
                     
                     # Format cell count
@@ -613,20 +613,20 @@ def main():
                 build_text_tree(db.get_root_node())
                 
                 # Create a container with scrollable content
-                st.markdown("""
-                <style>
+        st.markdown("""
+        <style>
                 .tree-container {
                     max-height: 800px;
                     overflow-y: auto;
-                    font-family: monospace;
+            font-family: monospace;
                     white-space: nowrap;
                     padding: 10px;
                     background-color: #f5f5f5;
                     border-radius: 5px;
                 }
-                </style>
-                """, unsafe_allow_html=True)
-                
+        </style>
+        """, unsafe_allow_html=True)
+        
                 # Display the tree lines with HTML for colored markers
                 text_tree_html = "<div class='tree-container'>"
                 for line in tree_lines:
@@ -689,35 +689,35 @@ def main():
     
     with tab4:
         if analysis_mode.startswith("Forward"):
-            st.subheader("Cell Distribution")
-            
-            # Create a treemap of the cell distribution
-            fig = px.treemap(
-                df,
-                path=['Parent', 'Population'],
-                values='Cell Count',
-                color='CV Value',
-                color_continuous_scale='RdYlGn_r',
-                title=f"Cell Distribution for {input_cells/1000:.1f}K Input Cells",
-                hover_data=['CV (%)', 'CV Quality']
-            )
-            
-            fig.update_layout(height=700)
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Also add a sunburst chart as an alternative visualization
-            fig2 = px.sunburst(
-                df,
-                path=['Parent', 'Population'],
-                values='Cell Count',
-                color='CV Value',
-                color_continuous_scale='RdYlGn_r',
-                title=f"Sunburst Chart of Cell Distribution ({input_cells/1000:.1f}K Input Cells)",
-                hover_data=['CV (%)', 'CV Quality']
-            )
-            
-            fig2.update_layout(height=700)
-            st.plotly_chart(fig2, use_container_width=True)
+        st.subheader("Cell Distribution")
+        
+        # Create a treemap of the cell distribution
+        fig = px.treemap(
+            df,
+            path=['Parent', 'Population'],
+            values='Cell Count',
+            color='CV Value',
+            color_continuous_scale='RdYlGn_r',
+            title=f"Cell Distribution for {input_cells/1000:.1f}K Input Cells",
+            hover_data=['CV (%)', 'CV Quality']
+        )
+        
+        fig.update_layout(height=700)
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Also add a sunburst chart as an alternative visualization
+        fig2 = px.sunburst(
+            df,
+            path=['Parent', 'Population'],
+            values='Cell Count',
+            color='CV Value',
+            color_continuous_scale='RdYlGn_r',
+            title=f"Sunburst Chart of Cell Distribution ({input_cells/1000:.1f}K Input Cells)",
+            hover_data=['CV (%)', 'CV Quality']
+        )
+        
+        fig2.update_layout(height=700)
+        st.plotly_chart(fig2, use_container_width=True)
         else:
             st.info("Cell distribution view is only available in Forward Analysis mode")
     
