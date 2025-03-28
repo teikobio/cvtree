@@ -108,7 +108,7 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("🔄 Forward Analysis", use_container_width=True, help="Calculate population counts from input cell amounts"):
+            if st.button("🔄 Forward: Calculate population counts from input cell amounts", use_container_width=True, help="Calculate population counts from input cell amounts"):
                 st.session_state.mode_selected = True
                 st.session_state.analysis_mode = "Forward"
                 st.rerun()
@@ -122,7 +122,7 @@ def main():
             """)
             
         with col2:
-            if st.button("🎯 Reverse Analysis", use_container_width=True, help="Determine required input cells for a target population and CV"):
+            if st.button("🎯 Reverse: Determine required input cells for a target population and CV", use_container_width=True, help="Determine required input cells for a target population and CV"):
                 st.session_state.mode_selected = True
                 st.session_state.analysis_mode = "Reverse"
                 st.rerun()
@@ -135,22 +135,23 @@ def main():
             - Optimize processing parameters
             """)
             
-        # Add about section at the bottom of splash screen
-        with st.expander("About this app", expanded=False):
-            st.markdown("""
-            This app estimates the number of cells in each population based on the initial input cell count
-            and calculates the expected coefficient of variation (CV) using Keeney's formula: r = (100/CV)².
-            
-            **Key features:**
-            - Enter any input cell count (starting from 10K)
-            - View estimated cell counts for each population in the hierarchy
-            - Analyze expected CV for each population
-            - Identify populations with potentially unreliable measurements (high CV)
-            
-            **References:**
-            - Keeney et al. formula for CV calculation: r = (100/CV)²
-            - Hierarchy based on Peripheral Blood Mononuclear Cell (PBMC) standard
-            """)
+        # Add about section at the bottom of splash screen as regular text
+        st.markdown("""
+        ### About this app
+        
+        This app estimates the number of cells in each population based on the initial input cell count
+        and calculates the expected coefficient of variation (CV) using Keeney's formula: r = (100/CV)².
+        
+        **Key features:**
+        - Enter any input cell count (starting from 10K)
+        - View estimated cell counts for each population in the hierarchy
+        - Analyze expected CV for each population
+        - Identify populations with potentially unreliable measurements (high CV)
+        
+        **References:**
+        - Keeney et al. formula for CV calculation: r = (100/CV)²
+        - Hierarchy based on Peripheral Blood Mononuclear Cell (PBMC) standard
+        """)
         
         return  # Exit here if mode not selected
 
@@ -182,14 +183,14 @@ def main():
     with st.sidebar:
         st.header("Input Settings")
         
-        # Add mode display and reset button
-        mode_col1, mode_col2 = st.columns([3, 1])
-        with mode_col1:
-            st.markdown(f"**Current Mode:** {'Forward' if st.session_state.analysis_mode == 'Forward' else 'Reverse'} Analysis")
-        with mode_col2:
-            if st.button("Change Mode"):
-                st.session_state.mode_selected = False
-                st.rerun()
+        # Replace mode display and reset button with radio buttons
+        st.session_state.analysis_mode = st.radio(
+            "Analysis Mode",
+            ["Forward", "Reverse"],
+            index=0 if st.session_state.analysis_mode == "Forward" else 1,
+            format_func=lambda x: f"{x} Analysis",
+            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
+        )
         
         # Conditionally show sections based on analysis mode
         if st.session_state.analysis_mode == "Forward":
