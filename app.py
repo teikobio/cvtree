@@ -338,26 +338,22 @@ def main():
 
             st.markdown("### Processing Assumptions")
             
-            # Create two columns for the processing assumptions
-            col1, col2 = st.columns([1, 2])
-            
-            with col1:
-                st.markdown(f"- Post-Stain Recovery: {post_stain_pct}%")
-                st.markdown(f"- Events Acquired: {events_acquired_pct}%")
-                st.markdown(f"- Single, Viable Cells: {viable_cells_pct}%")
-                st.markdown(f"- Overall Processing Efficiency: {total_efficiency:.1%}")
-            
-            with col2:
-                st.markdown("ℹ️ *Hover over each metric for details:*")
-                st.info("""
-                **Post-Stain Recovery:** Percentage of cells that survive staining, antibody binding, and permeabilization steps
-                
-                **Events Acquired:** Percentage of stained cells successfully measured by the flow cytometer
-                
-                **Single, Viable Cells:** Percentage of acquired events that are single, viable cells after excluding doublets and dead cells
-                
-                **Overall Processing Efficiency:** Combined effect of all processing steps - multiply all percentages to get this value
-                """)
+            st.markdown(
+                f"- Post-Stain Recovery: {post_stain_pct}% (?)",
+                help="Percentage of cells that survive staining, antibody binding, and permeabilization steps"
+            )
+            st.markdown(
+                f"- Events Acquired: {events_acquired_pct}% (?)",
+                help="Percentage of stained cells successfully measured by the flow cytometer"
+            )
+            st.markdown(
+                f"- Single, Viable Cells: {viable_cells_pct}% (?)",
+                help="Percentage of acquired events that are single, viable cells after excluding doublets and dead cells"
+            )
+            st.markdown(
+                f"- Overall Processing Efficiency: {total_efficiency:.1%} (?)",
+                help="Combined effect of all processing steps - multiply all percentages to get this value"
+            )
             
             st.info("""
             💡 **Note:** These calculations use Keeney's formula (r = (100/CV)²) and account for 
