@@ -160,32 +160,32 @@ def main():
                 help="Typical value: 4-6 million cells/ml from healthy donor"
             )
         
-        # Add Keeney's table reference
-        st.subheader("Keeney's Reference Table")
-        st.markdown("""
-        This table shows the total number of events needed to achieve specific CV percentages
-        for populations occurring at different frequencies.
-        """)
-        
-        # Generate and display Keeney's table
-        keeney_df = generate_keeney_table(
-            desired_cvs=[1, 5, 10, 20],
-            frequencies=[0.1, 0.01, 0.001, 0.0001]
-        )
-        
-        # Format the table for display
-        keeney_display = keeney_df.copy()
-        keeney_display['Fraction'] = keeney_display['Fraction'].apply(lambda x: f"{x:.4f}")
-        keeney_display = keeney_display.rename(columns={
-            'Fraction': 'Frequency',
-            '1:n': 'Ratio',
-            'CV 1%': 'For 1% CV',
-            'CV 5%': 'For 5% CV',
-            'CV 10%': 'For 10% CV',
-            'CV 20%': 'For 20% CV'
-        })
-        
-        st.dataframe(keeney_display, use_container_width=True)
+            # Add Keeney's table reference
+            st.subheader("Keeney's Reference Table")
+            st.markdown("""
+            This table shows the total number of events needed to achieve specific CV percentages
+            for populations occurring at different frequencies.
+            """)
+            
+            # Generate and display Keeney's table
+            keeney_df = generate_keeney_table(
+                desired_cvs=[1, 5, 10, 20],
+                frequencies=[0.1, 0.01, 0.001, 0.0001]
+            )
+            
+            # Format the table for display
+            keeney_display = keeney_df.copy()
+            keeney_display['Fraction'] = keeney_display['Fraction'].apply(lambda x: f"{x:.4f}")
+            keeney_display = keeney_display.rename(columns={
+                'Fraction': 'Frequency',
+                '1:n': 'Ratio',
+                'CV 1%': 'For 1% CV',
+                'CV 5%': 'For 5% CV',
+                'CV 10%': 'For 10% CV',
+                'CV 20%': 'For 20% CV'
+            })
+            
+            st.dataframe(keeney_display, use_container_width=True)
         else:
             # Reverse calculation mode
             st.subheader("Target Settings")
