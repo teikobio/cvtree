@@ -205,7 +205,7 @@ def create_text_tree(cell_counts, db):
         
         # Add expand/collapse button if node has children
         if children:
-            button = f'<span class="tree-button" onclick="toggleNode(\'{node_id}\')" id="{node_id}_btn">-</span>'
+            button = f'<button class="tree-button" onclick="toggleNode(\'{node_id}\')" id="{node_id}_btn">-</button>'
         else:
             button = '<span class="tree-spacer">  </span>'
             
@@ -246,18 +246,35 @@ def create_text_tree(cell_counts, db):
         border-radius: 5px;
     }
     .tree-button {
-        display: inline-block;
-        width: 15px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
         cursor: pointer;
         user-select: none;
         color: #666;
+        background: none;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-family: monospace;
+        font-size: 14px;
+        padding: 0;
+        line-height: 1;
     }
     .tree-button:hover {
         color: #000;
+        background-color: #e0e0e0;
+        border-color: #999;
+    }
+    .tree-button:active {
+        background-color: #ccc;
     }
     .tree-spacer {
         display: inline-block;
-        width: 15px;
+        width: 20px;
+        margin-right: 5px;
     }
     .tree-children {
         display: block;
