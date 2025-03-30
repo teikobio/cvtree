@@ -97,6 +97,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
 
     # Use the persisted target population from session state for all subsequent logic
     target_population = st.session_state.reverse_target_population
+    st.write(f"DEBUG Sidebar: target_population from state = '{target_population}'") # DEBUG
 
     # Initialize return dictionary - always use the target_population from session state
     results = {
@@ -114,6 +115,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
 
     # Use a consistent key for the slider, value resets if key changes
     cv_slider_key = f"target_cv_{target_population}"
+    st.write(f"DEBUG Sidebar: Slider Label Check = 'Target CV (%) for {target_population}'") # DEBUG
     target_cv = st.slider(
         f"Target CV (%) for {target_population}", # Dynamic label
         min_value=0.1,
@@ -156,6 +158,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     if required_events != float('inf') and total_efficiency > 0 :
         required_input_cells = int(required_events / total_efficiency)
         # Display success message here, as all inputs are now stable
+        st.write(f"DEBUG Sidebar: Success Msg Check = 'Results for {target_population}'") # DEBUG
         st.success(f"""
         **Results for {target_population} (Target CV: {target_cv:.1f}%)**
         - Population Frequency: {population_frequency:.4%}

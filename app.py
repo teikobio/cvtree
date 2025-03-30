@@ -396,6 +396,7 @@ def main():
                 current_events_acquired_disp = st.session_state.get("events_acquired_pct", DEFAULT_EVENTS_ACQUIRED_PCT)
                 current_viable_cells_disp = st.session_state.get("viable_cells_pct", DEFAULT_VIABLE_CELLS_PCT)
 
+                st.write(f"DEBUG Main App: target_pop from results = '{target_pop}'") # DEBUG
                 # Use the correctly scoped variable 'target_pop' here
                 st.subheader(f"Required Cells for {target_pop}")
 
