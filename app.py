@@ -108,7 +108,7 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("🔄 Forward: Calculate population counts from input cell amounts", use_container_width=True, help="Calculate population counts from input cell amounts"):
+            if st.button("🔄 Forward: Calculate population counts from input cell amounts", use_container_width=True):
                 st.session_state.mode_selected = True
                 st.session_state.analysis_mode = "Forward"
                 st.rerun()
@@ -122,7 +122,7 @@ def main():
             """)
             
         with col2:
-            if st.button("🎯 Reverse: Determine required input cells for a target population and CV", use_container_width=True, help="Determine required input cells for a target population and CV"):
+            if st.button("🎯 Reverse: Determine required input cells for a target population and CV", use_container_width=True):
                 st.session_state.mode_selected = True
                 st.session_state.analysis_mode = "Reverse"
                 st.rerun()
@@ -149,7 +149,7 @@ def main():
         - Identify populations with potentially unreliable measurements (high CV)
         
         **References:**
-        - Keeney et al. formula for CV calculation: r = (100/CV)²
+        - Keeney et al. ["Technical issues: flow cytometry and rare event analysis"](https://onlinelibrary.wiley.com/doi/10.1111/ijlh.12068)
         - Hierarchy based on Peripheral Blood Mononuclear Cell (PBMC) standard
         """)
         
@@ -175,7 +175,7 @@ def main():
         - Identify populations with potentially unreliable measurements (high CV)
         
         **References:**
-        - Keeney et al. formula for CV calculation: r = (100/CV)²
+        - Keeney et al. ["Technical issues: flow cytometry and rare event analysis"](https://onlinelibrary.wiley.com/doi/10.1111/ijlh.12068)
         - Hierarchy based on Peripheral Blood Mononuclear Cell (PBMC) standard
         """)
     
