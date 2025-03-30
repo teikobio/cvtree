@@ -40,7 +40,9 @@ from components.table_view import display_table_view
 from components.cv_analysis import display_cv_analysis
 from components.cell_distribution import display_cell_distribution
 from components.cell_processing import display_cell_processing
+from components.reverse_analysis import display_reverse_analysis_sidebar
 from visualizations.tree_view import create_interactive_tree, create_text_tree, display_cv_legend
+from streamlit_tree_select import tree_select
 
 # Initialize the cell database
 db = CellHierarchyDB()
@@ -237,61 +239,9 @@ def main():
                 help="Typical value: 4-6 million cells/ml from healthy donor"
             )
         elif st.session_state.analysis_mode == "Reverse":
-            # Show Target Settings before Processing Efficiency in Reverse mode
-            st.subheader("Target Population Settings")
-            
-            # Get all leaf populations for selection
-            leaf_populations = [cell for cell in db.get_hierarchy() if not db.get_children(cell)]
-            target_population = st.selectbox(
-                "Target Population",
-                options=leaf_populations,
-                help="Select the population you want to analyze"
-            )
-            
-            target_cv = st.slider(
-                "Target CV (%)", 
-                min_value=0.1,
-                max_value=100.0,
-                value=20.0,
-                step=0.1,
-                help="Desired coefficient of variation for the target population"
-            )
-            
-            # Calculate the frequency of the selected population
-            hierarchy = db.get_hierarchy()
-            def get_cumulative_proportion(population):
-                proportion = 1.0
-                current = population
-                while current in hierarchy:
-                    proportion *= hierarchy[current]["proportion"]
-                    current = db.get_parent(current)
-                return proportion
-            
-            population_frequency = get_cumulative_proportion(target_population)
-            
-            st.info(f"""
-            Based on the hierarchy, {target_population} represents approximately 
-            {population_frequency:.4%} of total leukocytes
-            """)
-            
-            # Calculate required events using Keeney's formula
-            required_events = int((100/target_cv)**2 / population_frequency)
-            
-            # Calculate required input cells based on processing efficiencies
-            total_efficiency = (post_stain_pct/100) * (events_acquired_pct/100) * (viable_cells_pct/100)
-            required_input_cells = int(required_events / total_efficiency)
-            
-            st.success(f"""
-            To achieve {target_cv}% CV for {target_population}:
-            - Required events: {required_events:,}
-            - Required input cells: {required_input_cells:,}
-            
-            (Using current processing efficiencies: {total_efficiency:.1%} overall)
-            """)
-            
-            # Set starting cells for the rest of the calculations
-            starting_cells = required_input_cells
-        
+            # Call the dedicated component function for Reverse Analysis settings
+            starting_cells = display_reverse_analysis_sidebar(db)
+
         # Processing Efficiency section
         st.subheader("Processing Efficiency")
         st.write("Adjust the percentage of cells that survive each processing step:")
@@ -300,7 +250,7 @@ def main():
             "Post-Stain (% of Pre-Stain):", 
             min_value=10, 
             max_value=100, 
-            value=post_stain_pct,
+            value=st.session_state.get("post_stain_pct", DEFAULT_POST_STAIN_PCT),
             key="post_stain_pct",
             help="Typically 30-40% of cells survive staining and permeabilization"
         )
@@ -309,7 +259,7 @@ def main():
             "Events Acquired (% of Post-Stain):", 
             min_value=50, 
             max_value=100, 
-            value=events_acquired_pct,
+            value=st.session_state.get("events_acquired_pct", DEFAULT_EVENTS_ACQUIRED_PCT),
             key="events_acquired_pct",
             help="Typically 90-95% of stained cells are successfully acquired by the instrument"
         )
@@ -318,7 +268,7 @@ def main():
             "Single, Viable Cells (% of Events Acquired):", 
             min_value=50, 
             max_value=100, 
-            value=viable_cells_pct,
+            value=st.session_state.get("viable_cells_pct", DEFAULT_VIABLE_CELLS_PCT),
             key="viable_cells_pct",
             help="Typically 70-80% of acquired events are single, viable cells after gating"
         )
