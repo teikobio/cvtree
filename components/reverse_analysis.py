@@ -16,15 +16,17 @@ from config.settings import (
 def build_tree_select_nodes(node_name, db):
     """Recursively build node structure for st-ant-tree.
 
-    Note: st-ant-tree expects 'title' key for display text.
+    Uses full name for title (display) and a prefixed ID for value (return).
     """
     children_names = db.get_children(node_name)
     children_nodes = []
     if children_names:
         children_nodes = [build_tree_select_nodes(child, db) for child in children_names]
-    # Use 'title' instead of 'label' for st-ant-tree
-    node_dict = {"title": node_name, "value": node_name, "children": children_nodes}
-    print(f"BUILDING NODE: {node_dict}") # DEBUG - Check value here
+
+    # Use full name for display title, prefixed name for value/ID
+    node_id_value = f"id_{node_name}" # Create a unique ID
+    node_dict = {"title": node_name, "value": node_id_value, "children": children_nodes}
+    # print(f"BUILDING NODE: {node_dict}") # Keep debug print if needed
     return node_dict
 
 def get_cumulative_proportion(population, db, hierarchy):
@@ -68,40 +70,48 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
         st.session_state.reverse_target_population = leaf_populations[0] if leaf_populations else db.get_root_node()
         print(f"INITIALIZED SESSION STATE: {st.session_state.reverse_target_population}") # Print to console/logs
 
-    # Prepare data for tree select
+    # Prepare data for tree select (uses title/value structure from above)
     root_node_name = db.get_root_node()
     nodes_for_select = [build_tree_select_nodes(root_node_name, db)] if root_node_name else []
 
     # Use st_ant_tree
-    print(f"BEFORE st_ant_tree: SESSION STATE = {st.session_state.reverse_target_population}") # Print to console/logs
-    selected_values = st_ant_tree(
+    # Convert session state full name to the ID format for defaultValue
+    current_default_id = f"id_{st.session_state.reverse_target_population}"
+    # print(f"BEFORE st_ant_tree: SESSION STATE = {st.session_state.reverse_target_population}, Default ID = {current_default_id}") # Debug
+    selected_id_values = st_ant_tree(
         treeData=nodes_for_select,
         showSearch=True,
         allowClear=False,
         placeholder="Select target population",
-        defaultValue=[st.session_state.reverse_target_population],
+        defaultValue=[current_default_id], # Set default using the ID format
         treeCheckable=False,
         key="ant_tree_select_reverse"
     )
-    print(f"AFTER st_ant_tree: RETURNED = {selected_values}") # Print to console/logs
+    # print(f"AFTER st_ant_tree: RETURNED = {selected_id_values}") # Debug
 
-    # Determine the currently selected node
-    new_selection = selected_values[0] if selected_values else None
-    print(f"NEW SELECTION from component = {new_selection}") # Print to console/logs
+    # Determine the currently selected node ID
+    new_selection_id = selected_id_values[0] if selected_id_values else None
+    # print(f"NEW SELECTION ID from component = {new_selection_id}") # Debug
 
-    # Update session state only if a new, valid selection is made
-    if new_selection and new_selection != st.session_state.reverse_target_population:
-        print(f"UPDATING SESSION STATE from {st.session_state.reverse_target_population} to {new_selection}") # Print to console/logs
-        st.session_state.reverse_target_population = new_selection
+    # Convert the returned ID back to the full node name (strip prefix)
+    new_selection_name = None
+    if new_selection_id and new_selection_id.startswith("id_"):
+        new_selection_name = new_selection_id[3:] # Remove "id_" prefix
+
+    # print(f"CONVERTED new selection name = {new_selection_name}") # Debug
+
+    # Update session state only if a new, valid selection name is found and it's different
+    if new_selection_name and new_selection_name != st.session_state.reverse_target_population:
+        # print(f"UPDATING SESSION STATE from {st.session_state.reverse_target_population} to {new_selection_name}") # Debug
+        st.session_state.reverse_target_population = new_selection_name
         # Clear the slider value when population changes
         cv_slider_key = f"target_cv_{st.session_state.reverse_target_population}"
         if cv_slider_key in st.session_state:
              del st.session_state[cv_slider_key]
 
-    # Use the persisted target population from session state
+    # Use the persisted target population (full name) from session state
     target_population = st.session_state.reverse_target_population
-    # REMOVED: st.write(f"DEBUG Sidebar: target_population from state = '{target_population}'") # DEBUG
-    print(f"FINAL target_population used for calc = {target_population}") # Print to console/logs
+    # print(f"FINAL target_population used for calc = {target_population}") # Debug
 
     # Initialize return dictionary - always use the target_population from session state
     results = {
@@ -113,7 +123,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
         "total_efficiency": 0.0,
         "starting_cells": MIN_STARTING_CELLS # Default starting cells
     }
-    print(f"RESULTS Dict being returned = {results}") # Print to console/logs
+    # print(f"RESULTS Dict being returned = {results}") # Debug
 
     # --- Calculations Section (Now uses reliable target_population from session state) ---
     hierarchy = db.get_hierarchy()
