@@ -93,23 +93,30 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     new_selection_id = selected_id_values[0] if selected_id_values else None
     # print(f"NEW SELECTION ID from component = {new_selection_id}") # Debug
 
-    # Convert the returned ID back to the full node name (strip prefix)
-    new_selection_name = None
-    if new_selection_id and new_selection_id.startswith("id_"):
-        new_selection_name = new_selection_id[3:] # Remove "id_" prefix
+    # Get the ID corresponding to the *current* session state value
+    current_id_in_state = f"id_{st.session_state.reverse_target_population}"
+    # print(f"CURRENT ID in state = {current_id_in_state}") # Debug
 
-    # print(f"CONVERTED new selection name = {new_selection_name}") # Debug
+    # Update session state if the component returned a new valid ID
+    # that is different from the ID representing the current session state
+    if new_selection_id and new_selection_id != current_id_in_state:
+        # Convert the new ID back to the full node name
+        new_selection_name = None
+        if new_selection_id.startswith("id_"):
+            new_selection_name = new_selection_id[3:] # Remove "id_" prefix
 
-    # Update session state only if a new, valid selection name is found and it's different
-    if new_selection_name and new_selection_name != st.session_state.reverse_target_population:
-        # print(f"UPDATING SESSION STATE from {st.session_state.reverse_target_population} to {new_selection_name}") # Debug
-        st.session_state.reverse_target_population = new_selection_name
-        # Clear the slider value when population changes
-        cv_slider_key = f"target_cv_{st.session_state.reverse_target_population}"
-        if cv_slider_key in st.session_state:
-             del st.session_state[cv_slider_key]
+        if new_selection_name: # Ensure conversion was successful
+             # print(f"UPDATING SESSION STATE from {st.session_state.reverse_target_population} to {new_selection_name}") # Debug
+             st.session_state.reverse_target_population = new_selection_name
+             # Clear the slider value when population changes
+             cv_slider_key = f"target_cv_{st.session_state.reverse_target_population}"
+             if cv_slider_key in st.session_state:
+                  del st.session_state[cv_slider_key]
+             # Force a rerun AFTER updating session state
+             st.rerun()
 
     # Use the persisted target population (full name) from session state
+    # This code block will run again after st.rerun() with the updated state
     target_population = st.session_state.reverse_target_population
     # print(f"FINAL target_population used for calc = {target_population}") # Debug
 
