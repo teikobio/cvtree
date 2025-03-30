@@ -99,6 +99,9 @@ def main():
         st.session_state.mode_selected = False
         st.session_state.analysis_mode = None
 
+    # Initialize variables that might be set in Reverse mode
+    reverse_results = None
+
     # Show splash screen if mode not selected
     if not st.session_state.mode_selected:
         st.title("Flow Cytometry Cell Population Calculator")
@@ -240,7 +243,8 @@ def main():
             )
         elif st.session_state.analysis_mode == "Reverse":
             # Call the dedicated component function for Reverse Analysis settings
-            starting_cells = display_reverse_analysis_sidebar(db)
+            reverse_results = display_reverse_analysis_sidebar(db)
+            starting_cells = reverse_results['starting_cells']
 
         # Processing Efficiency section
         st.subheader("Processing Efficiency")
@@ -309,6 +313,12 @@ def main():
         st.dataframe(keeney_display, use_container_width=True)
         
         # Calculate waterfall of cell counts (common to both modes)
+        # Ensure starting_cells is valid before calculation
+        if starting_cells is None or not isinstance(starting_cells, (int, float)) or starting_cells < 0:
+            st.error("Invalid starting cell count determined. Please check settings.")
+            # Set a safe default or stop execution?
+            starting_cells = DEFAULT_STARTING_CELLS
+
         current_count = starting_cells
         cell_counts_waterfall = {}
         
@@ -318,7 +328,10 @@ def main():
         
         # Use the Single, Viable Cells as the input for Leukocytes
         input_cells = cell_counts_waterfall["Single, Viable Cells"]
-        st.success(f"Analysis using {input_cells:,} Single, Viable Cells as input for Leukocytes")
+
+        # Show success message only if starting_cells was valid
+        if starting_cells > 0:
+            st.success(f"Analysis using {input_cells:,} Single, Viable Cells as input for Leukocytes")
     
     # Calculate results
     cell_counts = calculate_cell_counts(input_cells)
@@ -367,46 +380,59 @@ def main():
     if st.session_state.analysis_mode == "Forward":
         with tab1:
             display_table_view(df, input_cells)
-    else:
+    else: # Reverse Mode - Display Summary Tab
         with tab1:
-            st.subheader(f"Required Cells for {target_population}")
-            
-            # Create a summary card
-            st.markdown(f"""
-            ### Target Settings
-            - **Population:** {target_population}
-            - **Target CV:** {target_cv}%
-            - **Population Frequency:** {population_frequency:.4%}
-            
-            ### Required Numbers
-            - **Events Needed:** {required_events:,}
-            - **Input Cells Needed:** {required_input_cells:,}
-            """)
+            # Check if reverse_results dictionary is available and has the needed keys
+            if reverse_results and reverse_results.get("target_population"):
+                # Access values safely from the dictionary
+                target_pop = reverse_results.get("target_population", "N/A")
+                target_cv_val = reverse_results.get("target_cv", "N/A")
+                pop_freq = reverse_results.get("population_frequency", 0)
+                req_events = reverse_results.get("required_events", 0)
+                req_input = reverse_results.get("required_input_cells", 0)
+                total_eff = reverse_results.get("total_efficiency", 0)
 
-            st.markdown("### Processing Assumptions")
-            
-            st.markdown(
-                f"- Post-Stain Recovery: {post_stain_pct}%",
-                help="Percentage of cells that survive staining, antibody binding, and permeabilization steps"
-            )
-            st.markdown(
-                f"- Events Acquired: {events_acquired_pct}%",
-                help="Percentage of stained cells successfully measured by the flow cytometer"
-            )
-            st.markdown(
-                f"- Single, Viable Cells: {viable_cells_pct}%",
-                help="Percentage of acquired events that are single, viable cells after excluding doublets and dead cells"
-            )
-            st.markdown(
-                f"- Overall Processing Efficiency: {total_efficiency:.1%}",
-                help="Combined effect of all processing steps - multiply all percentages to get this value"
-            )
-            
-            st.info("""
-            💡 **Note:** These calculations use Keeney's formula (r = (100/CV)²) and account for 
-            cell losses during processing. Adjust processing efficiencies in the sidebar 
-            to see how they affect the required input cells.
-            """)
+                st.subheader(f"Required Cells for {target_pop}")
+
+                # Create a summary card using values from reverse_results
+                st.markdown(f"""
+                ### Target Settings
+                - **Population:** {target_pop}
+                - **Target CV:** {target_cv_val}%
+                - **Population Frequency:** {pop_freq:.4%}
+
+                ### Required Numbers
+                - **Events Needed:** {req_events:,}
+                - **Input Cells Needed (Pre-Stain):** {req_input:,}
+                """)
+
+                st.markdown("### Processing Assumptions")
+                # Read current slider values directly for display consistency
+                st.markdown(
+                    f"- Post-Stain Recovery: {post_stain_pct}%",
+                    help="Percentage of cells that survive staining, antibody binding, and permeabilization steps"
+                )
+                st.markdown(
+                    f"- Events Acquired: {events_acquired_pct}%",
+                    help="Percentage of stained cells successfully measured by the flow cytometer"
+                )
+                st.markdown(
+                    f"- Single, Viable Cells: {viable_cells_pct}%",
+                    help="Percentage of acquired events that are single, viable cells after excluding doublets and dead cells"
+                )
+                st.markdown(
+                    f"- Overall Processing Efficiency: {total_eff:.1%}",
+                    help="Combined effect of all processing steps - multiply all percentages to get this value"
+                )
+
+                st.info("""
+                💡 **Note:** These calculations use Keeney's formula (r = (100/CV)²) and account for
+                cell losses during processing. Adjust processing efficiencies in the sidebar
+                to see how they affect the required input cells.
+                """)
+            else:
+                # Handle case where reverse_results might not be ready (e.g., initial load)
+                st.info("Select target population and CV in the sidebar to see the summary.")
     
     with tab2:
         if st.session_state.analysis_mode == "Forward":

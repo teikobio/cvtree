@@ -53,7 +53,7 @@ def get_cumulative_proportion(population, db, hierarchy):
 def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     """
     Displays the Target Population and CV settings, performs calculations,
-    and returns the required starting_cells.
+    and returns a dictionary containing calculated values.
     """
     st.subheader("Target Population Settings")
 
@@ -71,28 +71,46 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     selected_values = selected_node.get('selected', []) if selected_node else []
     target_population = selected_values[0] if selected_values else None
 
+    # Initialize return dictionary with defaults
+    results = {
+        "target_population": None,
+        "target_cv": 20.0, # Default CV
+        "population_frequency": 0.0,
+        "required_events": 0,
+        "required_input_cells": MIN_STARTING_CELLS,
+        "total_efficiency": 0.0,
+        "starting_cells": MIN_STARTING_CELLS # Default starting cells
+    }
+
     # Default selection handling
     if not target_population:
         leaf_populations = [cell for cell in db.get_hierarchy() if not db.get_children(cell)]
         target_population = leaf_populations[0] if leaf_populations else db.get_root_node()
         st.warning(f"No population selected, defaulting to: {target_population}. Please select a target.")
-        # Return a default value if no target is properly selected yet
-        return DEFAULT_STARTING_CELLS
+        # Update target_population in results, but return defaults for others
+        results["target_population"] = target_population
+        results["starting_cells"] = DEFAULT_STARTING_CELLS # Use standard default if none selected
+        return results # Return defaults early
+
+    # Store selected target population
+    results["target_population"] = target_population
 
     # --- Calculations Section ---
-    hierarchy = db.get_hierarchy() # Get hierarchy once
+    hierarchy = db.get_hierarchy()
 
     target_cv = st.slider(
         "Target CV (%)",
         min_value=0.1,
         max_value=100.0,
-        value=20.0,
+        value=results["target_cv"], # Use default from results dict
         step=0.1,
         help="Desired coefficient of variation for the target population",
         key=f"target_cv_{target_population}" # Unique key per population
     )
+    results["target_cv"] = target_cv # Store selected CV
 
     population_frequency = get_cumulative_proportion(target_population, db, hierarchy)
+    results["population_frequency"] = population_frequency
 
     if population_frequency is not None and population_frequency >= 0:
         st.info(f"""
@@ -100,24 +118,25 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
         {population_frequency:.4%} of total leukocytes
         """)
     else:
-        # Handle error from get_cumulative_proportion if needed
         st.error("Could not determine population frequency.")
-        return DEFAULT_STARTING_CELLS # Return default if frequency calculation failed
-
+        return results # Return current results (likely defaults)
 
     # Calculate required events
     required_events = float('inf')
     if population_frequency > 0:
         required_events = int((100/target_cv)**2 / population_frequency)
+        results["required_events"] = required_events
     else:
         st.error(f"Cannot calculate required events for {target_population} with zero or invalid frequency.")
-        # Decide if we should proceed or return default
+        results["required_events"] = 0 # Or some indicator of failure
+        # Decide if we should proceed or return
 
-    # Get current processing efficiencies from session state
+    # Get current processing efficiencies
     post_stain_pct_rev = st.session_state.get("post_stain_pct", DEFAULT_POST_STAIN_PCT)
     events_acquired_pct_rev = st.session_state.get("events_acquired_pct", DEFAULT_EVENTS_ACQUIRED_PCT)
     viable_cells_pct_rev = st.session_state.get("viable_cells_pct", DEFAULT_VIABLE_CELLS_PCT)
     total_efficiency = (post_stain_pct_rev/100) * (events_acquired_pct_rev/100) * (viable_cells_pct_rev/100)
+    results["total_efficiency"] = total_efficiency
 
     # Calculate required input cells
     required_input_cells = float('inf')
@@ -133,12 +152,13 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     elif total_efficiency <= 0:
         st.error("Cannot calculate required input cells with zero processing efficiency.")
     elif required_events == float('inf'):
-        # Error already shown for frequency=0 case
-        pass # Avoid duplicate error message
+        pass # Error already shown
     else:
-        # Catch unexpected cases
          st.error("An error occurred during input cell calculation.")
 
+    # Store calculated input cells and set starting_cells for main app
+    results["required_input_cells"] = required_input_cells if required_input_cells != float('inf') else 0
+    results["starting_cells"] = required_input_cells if required_input_cells != float('inf') else MIN_STARTING_CELLS
 
-    # Return the calculated starting cells (or a default minimum if calculation failed)
-    return required_input_cells if required_input_cells != float('inf') else MIN_STARTING_CELLS 
+    # Return the dictionary containing all calculated values
+    return results 
