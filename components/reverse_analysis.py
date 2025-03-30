@@ -64,40 +64,42 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
         # Set initial default (e.g., first leaf node)
         leaf_populations = [cell for cell in db.get_hierarchy() if not db.get_children(cell)]
         st.session_state.reverse_target_population = leaf_populations[0] if leaf_populations else db.get_root_node()
+        print(f"INITIALIZED SESSION STATE: {st.session_state.reverse_target_population}") # Print to console/logs
 
-    # Prepare data for tree select (uses 'title' key now)
+    # Prepare data for tree select
     root_node_name = db.get_root_node()
     nodes_for_select = [build_tree_select_nodes(root_node_name, db)] if root_node_name else []
 
     # Use st_ant_tree
-    # Set defaultValue to reflect current state
-    # Explicitly set treeCheckable=False for single selection visual
+    print(f"BEFORE st_ant_tree: SESSION STATE = {st.session_state.reverse_target_population}") # Print to console/logs
     selected_values = st_ant_tree(
-        treeData=nodes_for_select, # Use treeData argument
-        showSearch=True, # Keep search enabled
-        allowClear=False, # Prevent easily clearing the selection
+        treeData=nodes_for_select,
+        showSearch=True,
+        allowClear=False,
         placeholder="Select target population",
-        defaultValue=[st.session_state.reverse_target_population], # Set default selection
-        treeCheckable=False, # Explicitly disable checkboxes
+        defaultValue=[st.session_state.reverse_target_population],
+        treeCheckable=False,
         key="ant_tree_select_reverse"
     )
+    print(f"AFTER st_ant_tree: RETURNED = {selected_values}") # Print to console/logs
 
     # Determine the currently selected node
-    # st_ant_tree returns a list of selected values directly
     new_selection = selected_values[0] if selected_values else None
+    print(f"NEW SELECTION from component = {new_selection}") # Print to console/logs
 
     # Update session state only if a new, valid selection is made
     if new_selection and new_selection != st.session_state.reverse_target_population:
+        print(f"UPDATING SESSION STATE from {st.session_state.reverse_target_population} to {new_selection}") # Print to console/logs
         st.session_state.reverse_target_population = new_selection
         # Clear the slider value when population changes
         cv_slider_key = f"target_cv_{st.session_state.reverse_target_population}"
         if cv_slider_key in st.session_state:
              del st.session_state[cv_slider_key]
-        # st.rerun() # Might need rerun if clearing state isn't enough
 
-    # Use the persisted target population from session state for all subsequent logic
+    # Use the persisted target population from session state
     target_population = st.session_state.reverse_target_population
-    st.write(f"DEBUG Sidebar: target_population from state = '{target_population}'") # DEBUG
+    # REMOVED: st.write(f"DEBUG Sidebar: target_population from state = '{target_population}'") # DEBUG
+    print(f"FINAL target_population used for calc = {target_population}") # Print to console/logs
 
     # Initialize return dictionary - always use the target_population from session state
     results = {
@@ -109,13 +111,13 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
         "total_efficiency": 0.0,
         "starting_cells": MIN_STARTING_CELLS # Default starting cells
     }
+    print(f"RESULTS Dict being returned = {results}") # Print to console/logs
 
     # --- Calculations Section (Now uses reliable target_population from session state) ---
     hierarchy = db.get_hierarchy()
 
     # Use a consistent key for the slider, value resets if key changes
     cv_slider_key = f"target_cv_{target_population}"
-    st.write(f"DEBUG Sidebar: Slider Label Check = 'Target CV (%) for {target_population}'") # DEBUG
     target_cv = st.slider(
         f"Target CV (%) for {target_population}", # Dynamic label
         min_value=0.1,
@@ -158,7 +160,6 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     if required_events != float('inf') and total_efficiency > 0 :
         required_input_cells = int(required_events / total_efficiency)
         # Display success message here, as all inputs are now stable
-        st.write(f"DEBUG Sidebar: Success Msg Check = 'Results for {target_population}'") # DEBUG
         st.success(f"""
         **Results for {target_population} (Target CV: {target_cv:.1f}%)**
         - Population Frequency: {population_frequency:.4%}
