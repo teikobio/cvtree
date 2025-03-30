@@ -4,7 +4,7 @@ Component for displaying Reverse Analysis settings and calculations in the sideb
 
 import streamlit as st
 from cell_database import CellHierarchyDB
-from streamlit_tree_select import tree_select
+from st_ant_tree import st_ant_tree # Add new import
 from config.settings import (
     DEFAULT_POST_STAIN_PCT,
     DEFAULT_EVENTS_ACQUIRED_PCT,
@@ -14,14 +14,16 @@ from config.settings import (
 )
 
 def build_tree_select_nodes(node_name, db):
-    """Recursively build node structure for streamlit-tree-select."""
-    # This helper function might be better placed in a utils file if used elsewhere,
-    # but keeping it here for now for simplicity.
+    """Recursively build node structure for st-ant-tree.
+
+    Note: st-ant-tree expects 'title' key for display text.
+    """
     children_names = db.get_children(node_name)
     children_nodes = []
     if children_names:
         children_nodes = [build_tree_select_nodes(child, db) for child in children_names]
-    return {"label": node_name, "value": node_name, "children": children_nodes}
+    # Use 'title' instead of 'label' for st-ant-tree
+    return {"title": node_name, "value": node_name, "children": children_nodes}
 
 def get_cumulative_proportion(population, db, hierarchy):
     """Calculate the cumulative proportion of a population relative to the root."""
@@ -52,8 +54,8 @@ def get_cumulative_proportion(population, db, hierarchy):
 
 def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     """
-    Displays the Target Population and CV settings, performs calculations,
-    and returns a dictionary containing calculated values.
+    Displays the Target Population and CV settings using st-ant-tree,
+    performs calculations, and returns a dictionary containing calculated values.
     """
     st.subheader("Target Population Settings")
 
@@ -63,33 +65,34 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
         leaf_populations = [cell for cell in db.get_hierarchy() if not db.get_children(cell)]
         st.session_state.reverse_target_population = leaf_populations[0] if leaf_populations else db.get_root_node()
 
-    # Prepare data for tree select
+    # Prepare data for tree select (uses 'title' key now)
     root_node_name = db.get_root_node()
     nodes_for_select = [build_tree_select_nodes(root_node_name, db)] if root_node_name else []
 
-    # Use tree_select
-    # Set 'checked' to the currently stored target population to visually indicate selection
-    selected_node_state = tree_select(
-        nodes_for_select,
-        show_expand_all=True,
-        checked=[st.session_state.reverse_target_population], # Reflect current state
-        key="tree_select_reverse" # Add a key for potential state access if needed
+    # Use st_ant_tree
+    # Set defaultValue to reflect current state
+    # Omit treeCheckable=True for single selection behavior
+    selected_values = st_ant_tree(
+        treeData=nodes_for_select, # Use treeData argument
+        showSearch=True, # Keep search enabled
+        allowClear=False, # Prevent easily clearing the selection
+        placeholder="Select target population",
+        defaultValue=[st.session_state.reverse_target_population], # Set default selection
+        key="ant_tree_select_reverse"
     )
 
-    # Determine the currently selected node from the component's output
-    # Use 'selected' for the last clicked node, which is what we want
-    currently_selected_list = selected_node_state.get('selected', []) if selected_node_state else []
-    new_selection = currently_selected_list[0] if currently_selected_list else None
+    # Determine the currently selected node
+    # st_ant_tree returns a list of selected values directly
+    new_selection = selected_values[0] if selected_values else None
 
     # Update session state only if a new, valid selection is made
     if new_selection and new_selection != st.session_state.reverse_target_population:
         st.session_state.reverse_target_population = new_selection
-        # Clear the slider value when population changes by removing its specific state key
+        # Clear the slider value when population changes
         cv_slider_key = f"target_cv_{st.session_state.reverse_target_population}"
         if cv_slider_key in st.session_state:
              del st.session_state[cv_slider_key]
-        # We might need a rerun here if clearing slider state doesn't trigger it
-        # st.rerun()
+        # st.rerun() # Might need rerun if clearing state isn't enough
 
     # Use the persisted target population from session state for all subsequent logic
     target_population = st.session_state.reverse_target_population
