@@ -23,7 +23,9 @@ def build_tree_select_nodes(node_name, db):
     if children_names:
         children_nodes = [build_tree_select_nodes(child, db) for child in children_names]
     # Use 'title' instead of 'label' for st-ant-tree
-    return {"title": node_name, "value": node_name, "children": children_nodes}
+    node_dict = {"title": node_name, "value": node_name, "children": children_nodes}
+    print(f"BUILDING NODE: {node_dict}") # DEBUG - Check value here
+    return node_dict
 
 def get_cumulative_proportion(population, db, hierarchy):
     """Calculate the cumulative proportion of a population relative to the root."""
