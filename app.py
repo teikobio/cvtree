@@ -42,7 +42,6 @@ from components.cell_distribution import display_cell_distribution
 from components.cell_processing import display_cell_processing
 from components.reverse_analysis import display_reverse_analysis_sidebar
 from visualizations.tree_view import create_interactive_tree, create_text_tree, display_cv_legend
-from streamlit_tree_select import tree_select
 
 # Initialize the cell database
 db = CellHierarchyDB()
