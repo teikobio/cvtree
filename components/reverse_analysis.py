@@ -67,8 +67,9 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
         show_expand_all=True,
     )
 
-    # Extract the selected value
-    target_population = selected_node['selected'][0] if selected_node and selected_node['selected'] else None
+    # Extract the selected value safely
+    selected_values = selected_node.get('selected', []) if selected_node else []
+    target_population = selected_values[0] if selected_values else None
 
     # Default selection handling
     if not target_population:
