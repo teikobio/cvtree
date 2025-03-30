@@ -64,9 +64,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     # Use tree_select instead of selectbox
     selected_node = tree_select(
         nodes_for_select,
-        label="Target Population",
         show_expand_all=True,
-        help="Select the population you want to analyze"
     )
 
     # Extract the selected value
