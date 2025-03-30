@@ -71,13 +71,14 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
 
     # Use st_ant_tree
     # Set defaultValue to reflect current state
-    # Omit treeCheckable=True for single selection behavior
+    # Explicitly set treeCheckable=False for single selection visual
     selected_values = st_ant_tree(
         treeData=nodes_for_select, # Use treeData argument
         showSearch=True, # Keep search enabled
         allowClear=False, # Prevent easily clearing the selection
         placeholder="Select target population",
         defaultValue=[st.session_state.reverse_target_population], # Set default selection
+        treeCheckable=False, # Explicitly disable checkboxes
         key="ant_tree_select_reverse"
     )
 
