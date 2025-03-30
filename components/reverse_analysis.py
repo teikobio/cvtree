@@ -57,23 +57,46 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     """
     st.subheader("Target Population Settings")
 
+    # Initialize session state for target population if it doesn't exist
+    if 'reverse_target_population' not in st.session_state:
+        # Set initial default (e.g., first leaf node)
+        leaf_populations = [cell for cell in db.get_hierarchy() if not db.get_children(cell)]
+        st.session_state.reverse_target_population = leaf_populations[0] if leaf_populations else db.get_root_node()
+
     # Prepare data for tree select
     root_node_name = db.get_root_node()
     nodes_for_select = [build_tree_select_nodes(root_node_name, db)] if root_node_name else []
 
-    # Use tree_select instead of selectbox
-    selected_node = tree_select(
+    # Use tree_select
+    # Set 'checked' to the currently stored target population to visually indicate selection
+    selected_node_state = tree_select(
         nodes_for_select,
         show_expand_all=True,
+        checked=[st.session_state.reverse_target_population], # Reflect current state
+        key="tree_select_reverse" # Add a key for potential state access if needed
     )
 
-    # Extract the selected value safely
-    selected_values = selected_node.get('selected', []) if selected_node else []
-    target_population = selected_values[0] if selected_values else None
+    # Determine the currently selected node from the component's output
+    # Use 'selected' for the last clicked node, which is what we want
+    currently_selected_list = selected_node_state.get('selected', []) if selected_node_state else []
+    new_selection = currently_selected_list[0] if currently_selected_list else None
 
-    # Initialize return dictionary with defaults
+    # Update session state only if a new, valid selection is made
+    if new_selection and new_selection != st.session_state.reverse_target_population:
+        st.session_state.reverse_target_population = new_selection
+        # Clear the slider value when population changes by removing its specific state key
+        cv_slider_key = f"target_cv_{st.session_state.reverse_target_population}"
+        if cv_slider_key in st.session_state:
+             del st.session_state[cv_slider_key]
+        # We might need a rerun here if clearing slider state doesn't trigger it
+        # st.rerun()
+
+    # Use the persisted target population from session state for all subsequent logic
+    target_population = st.session_state.reverse_target_population
+
+    # Initialize return dictionary - always use the target_population from session state
     results = {
-        "target_population": None,
+        "target_population": target_population,
         "target_cv": 20.0, # Default CV
         "population_frequency": 0.0,
         "required_events": 0,
@@ -82,30 +105,19 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
         "starting_cells": MIN_STARTING_CELLS # Default starting cells
     }
 
-    # Default selection handling
-    if not target_population:
-        leaf_populations = [cell for cell in db.get_hierarchy() if not db.get_children(cell)]
-        target_population = leaf_populations[0] if leaf_populations else db.get_root_node()
-        st.warning(f"No population selected, defaulting to: {target_population}. Please select a target.")
-        # Update target_population in results, but return defaults for others
-        results["target_population"] = target_population
-        results["starting_cells"] = DEFAULT_STARTING_CELLS # Use standard default if none selected
-        return results # Return defaults early
-
-    # Store selected target population
-    results["target_population"] = target_population
-
-    # --- Calculations Section ---
+    # --- Calculations Section (Now uses reliable target_population from session state) ---
     hierarchy = db.get_hierarchy()
 
+    # Use a consistent key for the slider, value resets if key changes
+    cv_slider_key = f"target_cv_{target_population}"
     target_cv = st.slider(
-        "Target CV (%)",
+        f"Target CV (%) for {target_population}", # Dynamic label
         min_value=0.1,
         max_value=100.0,
-        value=results["target_cv"], # Use default from results dict
+        value=st.session_state.get(cv_slider_key, 20.0), # Default to 20 if key not set
         step=0.1,
         help="Desired coefficient of variation for the target population",
-        key=f"target_cv_{target_population}" # Unique key per population
+        key=cv_slider_key # Unique key per population
     )
     results["target_cv"] = target_cv # Store selected CV
 
@@ -113,10 +125,8 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     results["population_frequency"] = population_frequency
 
     if population_frequency is not None and population_frequency >= 0:
-        st.info(f"""
-        Based on the hierarchy, {target_population} represents approximately
-        {population_frequency:.4%} of total leukocytes
-        """)
+        # st.info(...) # Display info if needed, maybe redundant with success message
+        pass # Info is implicitly shown in success message now
     else:
         st.error("Could not determine population frequency.")
         return results # Return current results (likely defaults)
@@ -128,8 +138,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
         results["required_events"] = required_events
     else:
         st.error(f"Cannot calculate required events for {target_population} with zero or invalid frequency.")
-        results["required_events"] = 0 # Or some indicator of failure
-        # Decide if we should proceed or return
+        results["required_events"] = 0
 
     # Get current processing efficiencies
     post_stain_pct_rev = st.session_state.get("post_stain_pct", DEFAULT_POST_STAIN_PCT)
@@ -142,23 +151,23 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     required_input_cells = float('inf')
     if required_events != float('inf') and total_efficiency > 0 :
         required_input_cells = int(required_events / total_efficiency)
+        # Display success message here, as all inputs are now stable
         st.success(f"""
-        To achieve {target_cv}% CV for {target_population}:
-        - Required events for target population: {required_events:,}
-        - Required input cells (Pre-Stain): {required_input_cells:,}
-
-        (Using current processing efficiencies: {total_efficiency:.1%} overall)
+        **Results for {target_population} (Target CV: {target_cv:.1f}%)**
+        - Population Frequency: {population_frequency:.4%}
+        - Required Events: {required_events:,}
+        - Required Input Cells (Pre-Stain): {required_input_cells:,}
+        - Overall Efficiency Used: {total_efficiency:.1%}
         """)
     elif total_efficiency <= 0:
         st.error("Cannot calculate required input cells with zero processing efficiency.")
     elif required_events == float('inf'):
-        pass # Error already shown
+        pass # Error already shown for frequency
     else:
          st.error("An error occurred during input cell calculation.")
 
-    # Store calculated input cells and set starting_cells for main app
+    # Store final calculated values
     results["required_input_cells"] = required_input_cells if required_input_cells != float('inf') else 0
     results["starting_cells"] = required_input_cells if required_input_cells != float('inf') else MIN_STARTING_CELLS
 
-    # Return the dictionary containing all calculated values
     return results 
