@@ -391,7 +391,12 @@ def main():
                 req_events = reverse_results.get("required_events", 0)
                 req_input = reverse_results.get("required_input_cells", 0)
                 total_eff = reverse_results.get("total_efficiency", 0)
+                # Read current processing values directly from session state for display
+                current_post_stain_disp = st.session_state.get("post_stain_pct", DEFAULT_POST_STAIN_PCT)
+                current_events_acquired_disp = st.session_state.get("events_acquired_pct", DEFAULT_EVENTS_ACQUIRED_PCT)
+                current_viable_cells_disp = st.session_state.get("viable_cells_pct", DEFAULT_VIABLE_CELLS_PCT)
 
+                # Use the correctly scoped variable 'target_pop' here
                 st.subheader(f"Required Cells for {target_pop}")
 
                 # Create a summary card using values from reverse_results
@@ -407,17 +412,17 @@ def main():
                 """)
 
                 st.markdown("### Processing Assumptions")
-                # Read current slider values directly for display consistency
+                # Use consistently named variables holding current slider values
                 st.markdown(
-                    f"- Post-Stain Recovery: {post_stain_pct}%",
+                    f"- Post-Stain Recovery: {current_post_stain_disp}%",
                     help="Percentage of cells that survive staining, antibody binding, and permeabilization steps"
                 )
                 st.markdown(
-                    f"- Events Acquired: {events_acquired_pct}%",
+                    f"- Events Acquired: {current_events_acquired_disp}%",
                     help="Percentage of stained cells successfully measured by the flow cytometer"
                 )
                 st.markdown(
-                    f"- Single, Viable Cells: {viable_cells_pct}%",
+                    f"- Single, Viable Cells: {current_viable_cells_disp}%",
                     help="Percentage of acquired events that are single, viable cells after excluding doublets and dead cells"
                 )
                 st.markdown(
