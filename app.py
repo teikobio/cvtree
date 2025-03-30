@@ -149,13 +149,13 @@ def main():
         - Identify populations with potentially unreliable measurements (high CV)
         
         **Implementation Notes:**
-        - Population hierarchy and frequencies are based on [Teiko Bio's 25-marker PBMC spectral flow panel](https://teiko.bio/pbmc-spectral-flow/)
+        - Population hierarchy and frequencies are based on [Teiko's 25-marker PBMC spectral flow panel](https://teiko.bio/pbmc-spectral-flow/)
         - CV calculations are theoretical estimates using Keeney's formula and may differ from actual experimental values
         - The app is intended as a planning tool and should be validated against your specific experimental conditions
         
         **References:**
         - Keeney et al. ["Technical issues: flow cytometry and rare event analysis"](https://onlinelibrary.wiley.com/doi/10.1111/ijlh.12068)
-        - [Teiko Bio PBMC Spectral Flow Panel](https://teiko.bio/pbmc-spectral-flow/)
+        - [Teiko PBMC Spectral Flow Panel](https://teiko.bio/pbmc-spectral-flow/)
         """)
         
         # Add feedback button
@@ -191,13 +191,13 @@ def main():
         - Identify populations with potentially unreliable measurements (high CV)
         
         **Implementation Notes:**
-        - Population hierarchy and frequencies are based on [Teiko Bio's 25-marker PBMC spectral flow panel](https://teiko.bio/pbmc-spectral-flow/)
+        - Population hierarchy and frequencies are based on [Teiko's 25-marker PBMC spectral flow panel](https://teiko.bio/pbmc-spectral-flow/)
         - CV calculations are theoretical estimates using Keeney's formula and may differ from actual experimental values
         - The app is intended as a planning tool and should be validated against your specific experimental conditions
         
         **References:**
         - Keeney et al. ["Technical issues: flow cytometry and rare event analysis"](https://onlinelibrary.wiley.com/doi/10.1111/ijlh.12068)
-        - [Teiko Bio PBMC Spectral Flow Panel](https://teiko.bio/pbmc-spectral-flow/)
+        - [Teiko PBMC Spectral Flow Panel](https://teiko.bio/pbmc-spectral-flow/)
         """)
         
         # Add feedback button in expander too
