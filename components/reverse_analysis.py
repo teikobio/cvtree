@@ -37,7 +37,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     Displays the Target Population (using st.selectbox) and CV settings,
     performs calculations, and returns a dictionary containing calculated values.
     """
-    st.subheader("Target Population Settings")
+    st.sidebar.subheader("Target Population Settings")
 
     # Get all cell types and sort them for the dropdown
     all_cell_types = sorted(db.get_all_cell_types())
@@ -55,7 +55,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     current_selection_index = all_cell_types.index(current_selection_in_state) if current_selection_in_state in all_cell_types else 0
 
     # Use st.selectbox with all cell types
-    new_selection = st.selectbox(
+    new_selection = st.sidebar.selectbox(
         "Target Population",
         options=all_cell_types,
         index=current_selection_index, # Set index based on current session state
@@ -100,7 +100,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     # --- Calculations Section ---
     hierarchy = db.get_hierarchy()
     cv_slider_key = f"target_cv_{target_population}"
-    target_cv = st.number_input(
+    target_cv = st.sidebar.number_input(
         f"Target CV (%) for {target_population}", # Dynamic label
         min_value=0.1,
         max_value=100.0,
@@ -141,10 +141,10 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     if required_events != float('inf') and total_efficiency > 0 :
         required_input_cells = int(required_events / total_efficiency)
         # Display success message here
-        st.success(f"""
+        st.sidebar.success(f"""
         **Results for {target_population} (Target CV: {target_cv:.1f}%)**
         - Population Frequency: {population_frequency:.4%}
-        - Required Events: {required_events:,}
+        - {target_population} Events Needed for {target_cv:.1f}% CV: {required_events:,}
         - Required Input Cells (Pre-Stain): {required_input_cells:,}
         - Overall Efficiency Used: {total_efficiency:.1%}
         """)
