@@ -105,40 +105,40 @@ def main():
     if not st.session_state.mode_selected:
         st.title("Flow Cytometry Cell Population Calculator")
         
-        st.markdown("""
-        ### Welcome! Choose your analysis mode:
-        """)
+        st.markdown("### Choose your analysis mode:")
         
-        col1, col2 = st.columns(2)
+        # Replace buttons with radio selection
+        mode_choice = st.radio(
+            "",  # Empty label since we have the header above
+            ["Forward", "Reverse"],
+            format_func=lambda x: "➡️ Forward: Calculate population counts from input cell amounts" if x == "Forward" 
+                                else "⬅️ Reverse: Determine required input cells for a target population and CV",
+            horizontal=True,
+            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
+        )
         
-        with col1:
-            if st.button("🔄 Forward: Calculate population counts from input cell amounts", use_container_width=True):
-                st.session_state.mode_selected = True
-                st.session_state.analysis_mode = "Forward"
-                st.rerun()
-                
+        # Add descriptions below the radio buttons
+        if mode_choice == "Forward":
             st.markdown("""
-            #### Forward Analysis
             Start with your input cells and calculate:
             - Expected cell counts for each population
             - CV values and quality assessment
             - Processing efficiency impact
             """)
-            
-        with col2:
-            if st.button("🎯 Reverse: Determine required input cells for a target population and CV", use_container_width=True):
-                st.session_state.mode_selected = True
-                st.session_state.analysis_mode = "Reverse"
-                st.rerun()
-                
+        else:
             st.markdown("""
-            #### Reverse Analysis
             Start with your target population and:
             - Specify desired CV
             - Calculate required input cells
             - Optimize processing parameters
             """)
             
+        # Add a "Start Analysis" button
+        if st.button("Start Analysis", use_container_width=True, type="primary"):
+            st.session_state.mode_selected = True
+            st.session_state.analysis_mode = mode_choice
+            st.rerun()
+        
         # Add about section at the bottom of splash screen as regular text
         st.markdown("""
         ### About this app
