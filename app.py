@@ -249,11 +249,30 @@ def main():
         st.subheader("Processing Efficiency")
         st.write("Adjust the percentage of cells that survive each processing step:")
         
+        # Add Reset to Defaults button before the sliders
+        if st.button("Reset Processing Steps to Defaults"):
+            # Use a different key to trigger the reset
+            st.session_state.reset_processing = True
+            st.rerun()
+            
+        # Initialize reset flag if not present
+        if 'reset_processing' not in st.session_state:
+            st.session_state.reset_processing = False
+            
+        # Use the reset flag to determine slider values
+        post_stain_value = DEFAULT_POST_STAIN_PCT if st.session_state.reset_processing else st.session_state.get("post_stain_pct", DEFAULT_POST_STAIN_PCT)
+        events_acquired_value = DEFAULT_EVENTS_ACQUIRED_PCT if st.session_state.reset_processing else st.session_state.get("events_acquired_pct", DEFAULT_EVENTS_ACQUIRED_PCT)
+        viable_cells_value = DEFAULT_VIABLE_CELLS_PCT if st.session_state.reset_processing else st.session_state.get("viable_cells_pct", DEFAULT_VIABLE_CELLS_PCT)
+        
+        # Reset the flag after getting values
+        if st.session_state.reset_processing:
+            st.session_state.reset_processing = False
+        
         post_stain_pct = st.slider(
             "Post-Stain (% of Pre-Stain):", 
             min_value=10, 
             max_value=100, 
-            value=st.session_state.get("post_stain_pct", DEFAULT_POST_STAIN_PCT),
+            value=post_stain_value,
             key="post_stain_pct",
             help="Typically 30-40% of cells survive staining and permeabilization"
         )
@@ -262,7 +281,7 @@ def main():
             "Events Acquired (% of Post-Stain):", 
             min_value=50, 
             max_value=100, 
-            value=st.session_state.get("events_acquired_pct", DEFAULT_EVENTS_ACQUIRED_PCT),
+            value=events_acquired_value,
             key="events_acquired_pct",
             help="Typically 90-95% of stained cells are successfully acquired by the instrument"
         )
@@ -271,11 +290,11 @@ def main():
             "Single, Viable Cells (% of Events Acquired):", 
             min_value=50, 
             max_value=100, 
-            value=st.session_state.get("viable_cells_pct", DEFAULT_VIABLE_CELLS_PCT),
+            value=viable_cells_value,
             key="viable_cells_pct",
             help="Typically 70-80% of acquired events are single, viable cells after gating"
         )
-        
+
         # Update processing steps with current values
         processing_steps = {
             "Pre-Stain": {"percent_of_previous": 1.0, "description": "Isolated PBMCs"}, 

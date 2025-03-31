@@ -100,7 +100,7 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     # --- Calculations Section ---
     hierarchy = db.get_hierarchy()
     cv_slider_key = f"target_cv_{target_population}"
-    target_cv = st.slider(
+    target_cv = st.number_input(
         f"Target CV (%) for {target_population}", # Dynamic label
         min_value=0.1,
         max_value=100.0,
