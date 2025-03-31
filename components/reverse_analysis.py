@@ -121,13 +121,18 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     # Calculate required events
     required_events = float('inf')
     if population_frequency > 0:
-        required_events = int((100/target_cv)**2 / population_frequency)
-        results["required_events"] = required_events
+        # Calculate target events needed using Keeney's formula r = (100/CV)²
+        target_events_required = int((100/target_cv)**2)
+        # Calculate total Leukocyte events needed to achieve the target events
+        total_events_needed = int(target_events_required / population_frequency)
+        results["target_events_required"] = target_events_required
+        results["total_events_needed"] = total_events_needed
     else:
         # Only show error if CV is not already inf (avoids duplicate message)
         if target_cv != float('inf'):
              st.error(f"Cannot calculate required events for {target_population} with zero frequency.")
-        results["required_events"] = 0
+        results["target_events_required"] = 0
+        results["total_events_needed"] = 0
 
     # Get current processing efficiencies
     post_stain_pct_rev = st.session_state.get("post_stain_pct", DEFAULT_POST_STAIN_PCT)
@@ -136,22 +141,21 @@ def display_reverse_analysis_sidebar(db: CellHierarchyDB):
     total_efficiency = (post_stain_pct_rev/100) * (events_acquired_pct_rev/100) * (viable_cells_pct_rev/100)
     results["total_efficiency"] = total_efficiency
 
-    # Calculate required input cells
+    # Calculate required input cells based on total events needed
     required_input_cells = float('inf')
-    if required_events != float('inf') and total_efficiency > 0 :
-        required_input_cells = int(required_events / total_efficiency)
+    if results["total_events_needed"] > 0 and total_efficiency > 0:
+        required_input_cells = int(results["total_events_needed"] / total_efficiency)
         # Display success message here
         st.sidebar.success(f"""
         **Results for {target_population} (Target CV: {target_cv:.1f}%)**
         - Population Frequency: {population_frequency:.4%}
-        - {target_population} Events Needed for {target_cv:.1f}% CV: {required_events:,}
+        - {target_population} Events Required (r = (100/CV)²): {results["target_events_required"]:,}
+        - Total Leukocyte Events Needed: {results["total_events_needed"]:,}
         - Required Input Cells (Pre-Stain): {required_input_cells:,}
         - Overall Efficiency Used: {total_efficiency:.1%}
         """)
     elif total_efficiency <= 0:
         st.error("Cannot calculate required input cells with zero processing efficiency.")
-    elif required_events == float('inf'):
-        pass # Error likely shown due to frequency
     else:
          st.error("An error occurred during input cell calculation.")
 
