@@ -107,29 +107,29 @@ def main():
         
         st.markdown("### Choose your analysis mode:", help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV")
         
-        # Create two columns for the mode selection
-        col1, col2 = st.columns([0.8, 0.2])
+        # Create a container for the mode selection and button
+        mode_container = st.container()
         
-        with col1:
-            # Radio selection in the left column
-            mode_choice = st.radio(
-                label="Analysis Mode",  # Add a label for proper tooltip placement
-                options=["Forward", "Reverse"],
-                format_func=lambda x: "➡️ Forward: Calculate population counts from input cell amounts" if x == "Forward" 
-                                else "⬅️ Reverse: Determine required input cells for a target population and CV",
-                horizontal=True,
-                label_visibility="collapsed"  # Hide the label but keep it for tooltip
-            )
+        # Radio selection centered
+        mode_choice = st.radio(
+            label="Analysis Mode",  # Add a label for proper tooltip placement
+            options=["Forward", "Reverse"],
+            format_func=lambda x: "➡️ Forward: Calculate population counts from input cell amounts" if x == "Forward" 
+                            else "⬅️ Reverse: Determine required input cells for a target population and CV",
+            horizontal=True,
+            label_visibility="collapsed"  # Hide the label but keep it for tooltip
+        )
         
-        with col2:
-            # Button in the right column, vertically centered
-            st.write("")  # Add some spacing
-            if st.button("Start Analysis", type="primary"):
+        # Add the Start Analysis button centered below the radio buttons
+        st.write("")  # Add some spacing
+        col_left, col_center, col_right = st.columns([1, 2, 1])
+        with col_center:
+            if st.button("Start Analysis", type="primary", use_container_width=True):
                 st.session_state.mode_selected = True
                 st.session_state.analysis_mode = mode_choice
                 st.rerun()
         
-        # Add descriptions below both columns
+        # Add descriptions below
         if mode_choice == "Forward":
             st.markdown("""
             Start with your input cells and calculate:
