@@ -105,20 +105,20 @@ def main():
     if not st.session_state.mode_selected:
         st.title("Flow Cytometry Cell Population Calculator")
         
-        st.markdown("### Choose your analysis mode:")
+        st.markdown("### Choose your analysis mode:", help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV")
         
         # Create two columns for the mode selection
-        col1, col2 = st.columns([0.7, 0.3])
+        col1, col2 = st.columns([0.8, 0.2])
         
         with col1:
             # Radio selection in the left column
             mode_choice = st.radio(
-                "",  # Empty label since we have the header above
-                ["Forward", "Reverse"],
+                label="Analysis Mode",  # Add a label for proper tooltip placement
+                options=["Forward", "Reverse"],
                 format_func=lambda x: "➡️ Forward: Calculate population counts from input cell amounts" if x == "Forward" 
                                 else "⬅️ Reverse: Determine required input cells for a target population and CV",
                 horizontal=True,
-                help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
+                label_visibility="collapsed"  # Hide the label but keep it for tooltip
             )
         
         with col2:
@@ -520,7 +520,15 @@ def main():
             st.info("Cell distribution view is only available in Forward Analysis mode")
     
     with tab5:
-        display_cell_processing(cell_counts_waterfall, starting_cells)
+        if st.session_state.analysis_mode == "Reverse" and reverse_results:
+            display_cell_processing(
+                cell_counts_waterfall,
+                starting_cells,
+                target_population=reverse_results.get("target_population"),
+                db=db
+            )
+        else:
+            display_cell_processing(cell_counts_waterfall, starting_cells)
 
 if __name__ == "__main__":
     main()

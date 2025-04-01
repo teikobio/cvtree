@@ -41,37 +41,41 @@ def create_cell_distribution_treemap(df, input_cells):
     fig.update_layout(height=CHART_HEIGHT)
     return fig
 
-def create_processing_waterfall_chart(cell_counts_waterfall, processing_steps):
+def create_processing_waterfall_chart(cell_counts):
     """Create a bar chart showing cell counts through processing steps"""
-    fig = px.bar(
-        x=list(cell_counts_waterfall.keys()),
-        y=list(cell_counts_waterfall.values()),
-        labels={"x": "Processing Step", "y": "Cell Count"},
-        title="Cell Counts Through Processing Steps",
-        text=[f"{count:,}" for count in cell_counts_waterfall.values()]
-    )
+    steps = list(cell_counts.keys())
+    counts = list(cell_counts.values())
     
-    # Add step recovery percentages to the hover text
-    hover_text = []
-    for i, step in enumerate(cell_counts_waterfall.keys()):
-        if step == "Pre-Stain":
-            hover_text.append(f"{step}<br>Count: {cell_counts_waterfall[step]:,}<br>Starting Point (100%)")
-        else:
-            prev_step = list(processing_steps.keys())[i-1]
-            pct = (cell_counts_waterfall[step] / cell_counts_waterfall[prev_step]) * 100
-            hover_text.append(f"{step}<br>Count: {cell_counts_waterfall[step]:,}<br>Recovery: {pct:.1f}% of {prev_step}")
+    # Create color scheme - processing steps in blue, population path in green
+    colors = ['#1f77b4' if 'Stain' in step or 'Events' in step or 'Cells' in step 
+              else '#2ca02c' for step in steps]
     
-    fig.update_traces(
+    fig = go.Figure()
+    
+    # Add bars
+    fig.add_trace(go.Bar(
+        x=steps,
+        y=counts,
+        marker_color=colors,
+        text=[f"{count:,}" for count in counts],
         textposition="outside",
-        marker_color="#1f77b4",
-        hovertext=hover_text,
-        hoverinfo="text"
-    )
+        hovertemplate="%{x}<br>Count: %{y:,}<extra></extra>"
+    ))
     
+    # Update layout
     fig.update_layout(
+        title="Cell Counts Through Processing Steps",
         height=CHART_HEIGHT,
         yaxis_title="Cell Count",
+        showlegend=False,
+        # Rotate x-axis labels if we have many steps
+        xaxis_tickangle=-45 if len(steps) > 6 else 0
     )
+    
+    # Format y-axis to use comma separator for thousands
+    fig.update_layout(yaxis=dict(
+        tickformat=",",
+    ))
     
     return fig
 
