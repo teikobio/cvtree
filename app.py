@@ -107,17 +107,29 @@ def main():
         
         st.markdown("### Choose your analysis mode:")
         
-        # Replace buttons with radio selection
-        mode_choice = st.radio(
-            "",  # Empty label since we have the header above
-            ["Forward", "Reverse"],
-            format_func=lambda x: "➡️ Forward: Calculate population counts from input cell amounts" if x == "Forward" 
-                                else "⬅️ Reverse: Determine required input cells for a target population and CV",
-            horizontal=True,
-            help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
-        )
+        # Create two columns for the mode selection
+        col1, col2 = st.columns([0.7, 0.3])
         
-        # Add descriptions below the radio buttons
+        with col1:
+            # Radio selection in the left column
+            mode_choice = st.radio(
+                "",  # Empty label since we have the header above
+                ["Forward", "Reverse"],
+                format_func=lambda x: "➡️ Forward: Calculate population counts from input cell amounts" if x == "Forward" 
+                                else "⬅️ Reverse: Determine required input cells for a target population and CV",
+                horizontal=True,
+                help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
+            )
+        
+        with col2:
+            # Button in the right column, vertically centered
+            st.write("")  # Add some spacing
+            if st.button("Start Analysis", type="primary"):
+                st.session_state.mode_selected = True
+                st.session_state.analysis_mode = mode_choice
+                st.rerun()
+        
+        # Add descriptions below both columns
         if mode_choice == "Forward":
             st.markdown("""
             Start with your input cells and calculate:
@@ -132,12 +144,6 @@ def main():
             - Calculate required input cells
             - Optimize processing parameters
             """)
-            
-        # Add a "Start Analysis" button
-        if st.button("Start Analysis", use_container_width=True, type="primary"):
-            st.session_state.mode_selected = True
-            st.session_state.analysis_mode = mode_choice
-            st.rerun()
         
         # Add about section at the bottom of splash screen as regular text
         st.markdown("""
