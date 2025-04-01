@@ -52,8 +52,8 @@ def display_cell_processing(cell_counts_waterfall, starting_cells, target_popula
         waterfall_data.append({
             "Processing Step": step,
             "Cell Count": f"{count:,}",
-            "% of Starting": f"{percent_of_start:.1f}%",
-            "% of Previous Step": f"{percent_of_previous:.1f}%",
+            "% of Starting": f"{percent_of_start:.2f}%",
+            "% of Previous Step": f"{percent_of_previous:.2f}%",
             "Description": PROCESSING_STEPS[step]["description"]
         })
     
@@ -73,9 +73,9 @@ def display_cell_processing(cell_counts_waterfall, starting_cells, target_popula
             waterfall_data.append({
                 "Processing Step": pop,
                 "Cell Count": f"{current_count:,}",
-                "% of Starting": f"{(current_count / starting_cells * 100):.1f}%",
-                "% of Previous Step": f"{(frequency * 100):.1f}%",
-                "Description": f"Population frequency: {frequency:.4%}"
+                "% of Starting": f"{(current_count / starting_cells * 100):.2f}%",
+                "% of Previous Step": f"{(frequency * 100):.2f}%",
+                "Description": f"Population frequency: {frequency:.2%}"
             })
     
     # Display the waterfall as a table
