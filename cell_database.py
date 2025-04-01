@@ -10,233 +10,254 @@ import os
 
 # Default cell hierarchy with proportions (% of parent population)
 DEFAULT_HIERARCHY = {
-    "Leukocytes": {
-        "proportion": 1.0,  # 100% of input
-        "parent": None,
-        "children": ["non-Granulocytes", "Basophil"]
-    },
     "non-Granulocytes": {
-        "proportion": 0.75,  # 75% of Leukocytes are non-granulocytes
-        "parent": "Leukocytes",
-        "children": ["T cell", "B cell", "non-T non-B"]
-    },
-    "Basophil": {
-        "proportion": 0.25,  # 25% of Leukocytes (simplified)
-        "parent": "Leukocytes",
-        "children": []
+        "proportion": 1.0,
+        "parent": None,
+        "children": ["T cell", "B cell", "Natural Killer (NK) cells", "Monocytes", "Dendritic Cells"]
     },
     "T cell": {
-        "proportion": 0.7,  # 70% of non-Granulocytes (from document: 37.28% of non-granulocytes)
+        "proportion": 0.4467,
         "parent": "non-Granulocytes",
-        "children": ["Gamma Delta T cell", "Natural Killer T cell", "non-Gamma Delta non-Natural Killer T cell"]
+        "children": ["Gamma Delta T cell", "Natural Killer T cell", "CD4 T cell", "CD8 T cell", "CD4/CD8 Double-Negative T cells (DNT)", "CD4/CD8 Double-Positive T cells (DPT)"]
     },
-    "B cell": {
-        "proportion": 0.15,  # 15% of non-Granulocytes
-        "parent": "non-Granulocytes",
-        "children": ["Naive B cell", "Memory B cell", "Marginal Zone-like B cell", "Plasmablast"]
-    },
-    "non-T non-B": {
-        "proportion": 0.15,  # 15% of non-Granulocytes
-        "parent": "non-Granulocytes",
-        "children": ["Natural Killer", "non-Natural Killer"]
-    },
-    # T cell subtypes
     "Gamma Delta T cell": {
-        "proportion": 0.05,  # 5% of T cells
+        "proportion": 0.0174,
         "parent": "T cell",
         "children": []
     },
     "Natural Killer T cell": {
-        "proportion": 0.03,  # 3% of T cells
+        "proportion": 0.0102,
         "parent": "T cell",
-        "children": []
-    },
-    "non-Gamma Delta non-Natural Killer T cell": {
-        "proportion": 0.92,  # 92% of T cells
-        "parent": "T cell",
-        "children": ["OTHER_T", "CD4 T cell", "CD8 T cell", "Double Positive T cell", "Double Negative T cell"]
-    },
-    "OTHER_T": {
-        "proportion": 0.03,  # 3% of non-Gamma Delta non-NKT cells
-        "parent": "non-Gamma Delta non-Natural Killer T cell",
         "children": []
     },
     "CD4 T cell": {
-        "proportion": 0.65,  # 65% of non-Gamma Delta non-NKT cells
-        "parent": "non-Gamma Delta non-Natural Killer T cell",
-        "children": ["Treg", "CD4+ non-Treg"]
+        "proportion": 0.3262,
+        "parent": "T cell",
+        "children": ["Regulatory T cells (Treg)", "nonTreg"]
+    },
+    "Regulatory T cells (Treg)": {
+        "proportion": 0.0227,
+        "parent": "CD4 T cell",
+        "children": []
+    },
+    "nonTreg": {
+        "proportion": 0.3035,
+        "parent": "CD4 T cell",
+        "children": ["CD4 Naive", "CD4 Central Memory (TCM)", "CD4 Effector Memory (TEM)", "CD4 CD45RA+ Effector Memory (TEMRA)"]
+    },
+    "CD4 Naive": {
+        "proportion": 0.1716,
+        "parent": "nonTreg",
+        "children": ["CD4 CD27+CD28+ Naive"]
+    },
+    "CD4 CD27+CD28+ Naive": {
+        "proportion": 0.1712,
+        "parent": "CD4 Naive",
+        "children": []
+    },
+    "CD4 Central Memory (TCM)": {
+        "proportion": 0.112,
+        "parent": "nonTreg",
+        "children": ["CD4 CD27+CD28+ TCM"]
+    },
+    "CD4 CD27+CD28+ TCM": {
+        "proportion": 0.104,
+        "parent": "CD4 Central Memory (TCM)",
+        "children": []
+    },
+    "CD4 Effector Memory (TEM)": {
+        "proportion": 0.0191,
+        "parent": "nonTreg",
+        "children": ["CD4 Early-like Effector Memory (TELEM)", "CD4 Early Effector Memory (TEEM)", "CD4 Terminal Effector Memory (TTEM)"]
+    },
+    "CD4 Early-like Effector Memory (TELEM)": {
+        "proportion": 0.0062,
+        "parent": "CD4 Effector Memory (TEM)",
+        "children": []
+    },
+    "CD4 Early Effector Memory (TEEM)": {
+        "proportion": 0.0129,
+        "parent": "CD4 Effector Memory (TEM)",
+        "children": []
+    },
+    "CD4 Terminal Effector Memory (TTEM)": {
+        "proportion": 0.0122,
+        "parent": "CD4 Effector Memory (TEM)",
+        "children": []
+    },
+    "CD4 CD45RA+ Effector Memory (TEMRA)": {
+        "proportion": 0.0267,
+        "parent": "nonTreg",
+        "children": ["CD4 CD27-CD28- TEMRA"]
+    },
+    "CD4 CD27-CD28- TEMRA": {
+        "proportion": 0.0264,
+        "parent": "CD4 CD45RA+ Effector Memory (TEMRA)",
+        "children": []
     },
     "CD8 T cell": {
-        "proportion": 0.25,  # 25% of non-Gamma Delta non-NKT cells
-        "parent": "non-Gamma Delta non-Natural Killer T cell",
-        "children": ["CD8 T Naive", "CD8 T Central Memory", "CD8 T Effector Memory", "CD8 TEMRA"]
+        "proportion": 0.0821,
+        "parent": "T cell",
+        "children": ["CD8 Naive", "CD8 Central Memory (TCM)", "CD8 Effector Memory (TEM)", "CD8 CD45RA+ Effector Memory (TEMRA)"]
     },
-    "Double Positive T cell": {
-        "proportion": 0.02,  # 2% of non-Gamma Delta non-NKT cells
-        "parent": "non-Gamma Delta non-Natural Killer T cell",
-        "children": []
-    },
-    "Double Negative T cell": {
-        "proportion": 0.05,  # 5% of non-Gamma Delta non-NKT cells
-        "parent": "non-Gamma Delta non-Natural Killer T cell",
-        "children": []
-    },
-    "Treg": {
-        "proportion": 0.08,  # 8% of CD4 T cells
-        "parent": "CD4 T cell",
-        "children": []
-    },
-    "CD4+ non-Treg": {
-        "proportion": 0.92,  # 92% of CD4 T cells
-        "parent": "CD4 T cell",
-        "children": ["CD4 T Naive", "CD4 T Central Memory", "CD4 T Effector Memory", "CD4 TEMRA"]
-    },
-    "CD4 T Naive": {
-        "proportion": 0.35,  # 35% of CD4+ non-Treg cells
-        "parent": "CD4+ non-Treg",
-        "children": []
-    },
-    "CD4 T Central Memory": {
-        "proportion": 0.35,  # 35% of CD4+ non-Treg cells
-        "parent": "CD4+ non-Treg",
-        "children": []
-    },
-    "CD4 T Effector Memory": {
-        "proportion": 0.25,  # 25% of CD4+ non-Treg cells
-        "parent": "CD4+ non-Treg",
-        "children": []
-    },
-    "CD4 TEMRA": {
-        "proportion": 0.05,  # 5% of CD4+ non-Treg cells
-        "parent": "CD4+ non-Treg",
-        "children": []
-    },
-    "CD8 T Naive": {
-        "proportion": 0.40,  # 40% of CD8 T cells
+    "CD8 Naive": {
+        "proportion": 0.0427,
         "parent": "CD8 T cell",
+        "children": ["CD8 CD27+CD28+ Naive"]
+    },
+    "CD8 CD27+CD28+ Naive": {
+        "proportion": 0.0423,
+        "parent": "CD8 Naive",
         "children": []
     },
-    "CD8 T Central Memory": {
-        "proportion": 0.20,  # 20% of CD8 T cells
+    "CD8 Central Memory (TCM)": {
+        "proportion": 0.0144,
         "parent": "CD8 T cell",
+        "children": ["CD8 CD27+CD28+ TCM"]
+    },
+    "CD8 CD27+CD28+ TCM": {
+        "proportion": 0.0129,
+        "parent": "CD8 Central Memory (TCM)",
         "children": []
     },
-    "CD8 T Effector Memory": {
-        "proportion": 0.30,  # 30% of CD8 T cells
+    "CD8 Effector Memory (TEM)": {
+        "proportion": 0.0198,
         "parent": "CD8 T cell",
+        "children": ["CD8 Early-like Effector Memory (TELEM)", "CD8 Early Effector Memory (TEEM)", "CD8 Terminal Effector Memory (TTEM)", "CD8 Intermediate Effector Memory (TIEM)"]
+    },
+    "CD8 Early-like Effector Memory (TELEM)": {
+        "proportion": 0.0062,
+        "parent": "CD8 Effector Memory (TEM)",
         "children": []
     },
-    "CD8 TEMRA": {
-        "proportion": 0.10,  # 10% of CD8 T cells
+    "CD8 Early Effector Memory (TEEM)": {
+        "proportion": 0.0051,
+        "parent": "CD8 Effector Memory (TEM)",
+        "children": []
+    },
+    "CD8 Terminal Effector Memory (TTEM)": {
+        "proportion": 0.0132,
+        "parent": "CD8 Effector Memory (TEM)",
+        "children": []
+    },
+    "CD8 Intermediate Effector Memory (TIEM)": {
+        "proportion": 0.0043,
+        "parent": "CD8 Effector Memory (TEM)",
+        "children": []
+    },
+    "CD8 CD45RA+ Effector Memory (TEMRA)": {
+        "proportion": 0.0052,
         "parent": "CD8 T cell",
+        "children": ["CD8 CD27-CD28- TEMRA"]
+    },
+    "CD8 CD27-CD28- TEMRA": {
+        "proportion": 0.0012,
+        "parent": "CD8 CD45RA+ Effector Memory (TEMRA)",
         "children": []
     },
-    
-    # B cell subtypes
+    "B cell": {
+        "proportion": 0.0893,
+        "parent": "non-Granulocytes",
+        "children": ["Naive B cell", "Memory B cell", "Marginal Zone-like B cell", "Plasmablast"]
+    },
     "Naive B cell": {
-        "proportion": 0.60,  # 60% of B cells
+        "proportion": 0.0709,
         "parent": "B cell",
         "children": []
     },
     "Memory B cell": {
-        "proportion": 0.30,  # 30% of B cells
+        "proportion": 0.0083,
         "parent": "B cell",
         "children": []
     },
     "Marginal Zone-like B cell": {
-        "proportion": 0.08,  # 8% of B cells
+        "proportion": 0.0051,
         "parent": "B cell",
         "children": []
     },
     "Plasmablast": {
-        "proportion": 0.02,  # 2% of B cells
+        "proportion": 0.0005,
         "parent": "B cell",
         "children": []
     },
-    
-    # NK and non-NK cell types
-    "Natural Killer": {
-        "proportion": 0.70,  # 70% of non-T non-B cells
-        "parent": "non-T non-B",
-        "children": ["Cytolytic Natural Killer", "Cytokine-producing Natural Killer", "Non-cytolytic Natural Killer"]
+    "Natural Killer (NK) cells": {
+        "proportion": 0.1267,
+        "parent": "non-Granulocytes",
+        "children": ["CD16+", "CD16-", "CD56hi"]
     },
-    "non-Natural Killer": {
-        "proportion": 0.30,  # 30% of non-T non-B cells
-        "parent": "non-T non-B",
-        "children": ["Monocyte", "non-Monocyte"]
-    },
-    "Cytolytic Natural Killer": {
-        "proportion": 0.50,  # 50% of NK cells
-        "parent": "Natural Killer",
+    "CD16+": {
+        "proportion": 0.035,
+        "parent": "Natural Killer (NK) cells",
         "children": []
     },
-    "Cytokine-producing Natural Killer": {
-        "proportion": 0.30,  # 30% of NK cells
-        "parent": "Natural Killer",
+    "CD16-": {
+        "proportion": 0.0845,
+        "parent": "Natural Killer (NK) cells",
         "children": []
     },
-    "Non-cytolytic Natural Killer": {
-        "proportion": 0.20,  # 20% of NK cells
-        "parent": "Natural Killer",
+    "CD56hi": {
+        "proportion": 0.0065,
+        "parent": "Natural Killer (NK) cells",
         "children": []
     },
-    
-    # Monocyte subtypes
-    "Monocyte": {
-        "proportion": 0.80,  # 80% of non-NK cells
-        "parent": "non-Natural Killer",
-        "children": ["Classical monocyte", "Non-classical monocyte", "Intermediate monocyte"]
+    "Monocytes": {
+        "proportion": 0.2761,
+        "parent": "non-Granulocytes",
+        "children": ["Classical (cMono)", "Intermediate (inMono)", "Non-Classical (ncMono)"]
     },
-    "non-Monocyte": {
-        "proportion": 0.20,  # 20% of non-NK cells
-        "parent": "non-Natural Killer",
-        "children": ["Dendritic Cell"]
-    },
-    "Classical monocyte": {
-        "proportion": 0.80,  # 80% of monocytes
-        "parent": "Monocyte",
+    "Classical (cMono)": {
+        "proportion": 0.2726,
+        "parent": "Monocytes",
         "children": []
     },
-    "Non-classical monocyte": {
-        "proportion": 0.12,  # 12% of monocytes
-        "parent": "Monocyte",
+    "Intermediate (inMono)": {
+        "proportion": 0.0031,
+        "parent": "Monocytes",
         "children": []
     },
-    "Intermediate monocyte": {
-        "proportion": 0.08,  # 8% of monocytes (from document: inMono 0.47% of non-granulocytes)
-        "parent": "Monocyte",
+    "Non-Classical (ncMono)": {
+        "proportion": 0.0004,
+        "parent": "Monocytes",
         "children": []
     },
-    
-    # Dendritic cell subtypes
-    "Dendritic Cell": {
-        "proportion": 1.0,  # 100% of non-monocyte cells
-        "parent": "non-Monocyte",
-        "children": ["Plasmacytoid dendritic cell", "Transitional dendritic cell", "Conventional dendritic cell"]
+    "Dendritic Cells": {
+        "proportion": 0.0271,
+        "parent": "non-Granulocytes",
+        "children": ["Classical (cDC)", "Plasmacytoid (pDC)", "Transitional (tDC)"]
     },
-    "Plasmacytoid dendritic cell": {
-        "proportion": 0.30,  # 30% of dendritic cells
-        "parent": "Dendritic Cell",
+    "Classical (cDC)": {
+        "proportion": 0.022,
+        "parent": "Dendritic Cells",
+        "children": ["Type 1 (cDC1)", "Type 2 (cDC2)"]
+    },
+    "Type 1 (cDC1)": {
+        "proportion": 0.0006,
+        "parent": "Classical (cDC)",
         "children": []
     },
-    "Transitional dendritic cell": {
-        "proportion": 0.20,  # 20% of dendritic cells
-        "parent": "Dendritic Cell",
+    "Type 2 (cDC2)": {
+        "proportion": 0.005,
+        "parent": "Classical (cDC)",
         "children": []
     },
-    "Conventional dendritic cell": {
-        "proportion": 0.50,  # 50% of dendritic cells
-        "parent": "Dendritic Cell",
-        "children": ["Type 1 conventional dendritic cell", "Type 2 conventional dendritic cell"]
-    },
-    "Type 1 conventional dendritic cell": {
-        "proportion": 0.50,  # 50% of conventional dendritic cells
-        "parent": "Conventional dendritic cell",
+    "Plasmacytoid (pDC)": {
+        "proportion": 0.0051,
+        "parent": "Dendritic Cells",
         "children": []
     },
-    "Type 2 conventional dendritic cell": {
-        "proportion": 0.50,  # 50% of conventional dendritic cells
-        "parent": "Conventional dendritic cell",
+    "Transitional (tDC)": {
+        "proportion": 0.0003,
+        "parent": "Dendritic Cells",
+        "children": []
+    },
+    "CD4/CD8 Double-Negative T cells (DNT)": {
+        "proportion": 0.0095,
+        "parent": "T cell",
+        "children": []
+    },
+    "CD4/CD8 Double-Positive T cells (DPT)": {
+        "proportion": 0.0012,
+        "parent": "T cell",
         "children": []
     }
 }
