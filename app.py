@@ -105,29 +105,26 @@ def main():
     if not st.session_state.mode_selected:
         st.title("Flow Cytometry Cell Population Calculator")
         
-        st.markdown("### Choose your analysis mode:", help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV")
-        
         # Create a container for the mode selection and button
         mode_container = st.container()
         
-        # Radio selection centered
+        # Radio selection with simple vertical layout
         mode_choice = st.radio(
-            label="Analysis Mode",  # Add a label for proper tooltip placement
+            "Choose your analysis mode:",
             options=["Forward", "Reverse"],
-            format_func=lambda x: "➡️ Forward: Calculate population counts from input cell amounts" if x == "Forward" 
-                            else "⬅️ Reverse: Determine required input cells for a target population and CV",
-            horizontal=True,
-            label_visibility="collapsed"  # Hide the label but keep it for tooltip
+            format_func=lambda x: "I want to calculate population counts from input cell amounts" if x == "Forward" 
+                            else "I want to determine required input cells for a target population and CV",
+            horizontal=False  # Stack vertically
         )
         
-        # Add the Start Analysis button centered below the radio buttons
-        st.write("")  # Add some spacing
-        col_left, col_center, col_right = st.columns([1, 2, 1])
-        with col_center:
-            if st.button("Start Analysis", type="primary", use_container_width=True):
-                st.session_state.mode_selected = True
-                st.session_state.analysis_mode = mode_choice
-                st.rerun()
+        # Add some spacing
+        st.write("")
+        
+        # Simple button below
+        if st.button("Start Analysis", type="primary", use_container_width=True):
+            st.session_state.mode_selected = True
+            st.session_state.analysis_mode = mode_choice
+            st.rerun()
         
         # Add descriptions below
         if mode_choice == "Forward":
