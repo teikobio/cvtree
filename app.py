@@ -121,7 +121,7 @@ def main():
         st.write("")
         
         # Simple button below
-        if st.button("Start Analysis", type="primary", use_container_width=True):
+        if st.button("Start Analysis", type="primary", use_container_width=False):
             st.session_state.mode_selected = True
             st.session_state.analysis_mode = mode_choice
             st.rerun()
