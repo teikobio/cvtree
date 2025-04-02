@@ -388,6 +388,63 @@ def main():
             "Cell Distribution",
             "Cell Processing"
         ])
+
+        with tab1:
+            display_table_view(df, input_cells)
+        
+        with tab2:
+            st.subheader("Cell Population Hierarchy")
+            
+            # Add view type selection
+            view_type = st.radio(
+                "Select visualization type:",
+                ["Interactive Tree", "Text Tree"],
+                horizontal=True
+            )
+            
+            if view_type == "Interactive Tree":
+                fig = create_interactive_tree(cell_counts, db)
+                st.plotly_chart(fig, use_container_width=True, config={
+                    'scrollZoom': True,
+                    'displayModeBar': True,
+                    'modeBarButtonsToAdd': [
+                        'pan2d',
+                        'zoomIn2d',
+                        'zoomOut2d',
+                        'resetScale2d'
+                    ]
+                })
+            else:
+                # Create a container with scrollable content
+                st.markdown("""
+                <style>
+                .tree-container {
+                    max-height: 800px;
+                    overflow-y: auto;
+                    font-family: monospace;
+                    white-space: nowrap;
+                    padding: 10px;
+                    background-color: #f5f5f5;
+                    border-radius: 5px;
+                    color: #000000;  /* Set text color to black for visibility */
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
+                html = create_text_tree(cell_counts, db)
+                st.markdown(html, unsafe_allow_html=True)
+            
+            display_cv_legend()
+        
+        with tab3:
+            display_cv_analysis(df, db)
+        
+        with tab4:
+            display_cell_distribution(df, input_cells)
+        
+        with tab5:
+            display_cell_processing(cell_counts_waterfall, starting_cells)
+
     else:
         # Show only relevant tabs for reverse mode
         tab1, tab3, tab5 = st.tabs([
@@ -396,10 +453,6 @@ def main():
             "Cell Processing"
         ])
 
-    if st.session_state.analysis_mode == "Forward":
-        with tab1:
-            display_table_view(df, input_cells)
-    else: # Reverse Mode - Display Summary Tab
         with tab1:
             # Check if reverse_results dictionary is available and has the needed keys
             if reverse_results and reverse_results.get("target_population"):
@@ -457,71 +510,20 @@ def main():
             else:
                 # Handle case where reverse_results might not be ready (e.g., initial load)
                 st.info("Select target population and CV in the sidebar to see the summary.")
-    
-    with tab2:
-        if st.session_state.analysis_mode == "Forward":
-            st.subheader("Cell Population Hierarchy")
-            
-            # Add view type selection
-            view_type = st.radio(
-                "Select visualization type:",
-                ["Interactive Tree", "Text Tree"],
-                horizontal=True
-            )
-            
-            if view_type == "Interactive Tree":
-                fig = create_interactive_tree(cell_counts, db)
-                st.plotly_chart(fig, use_container_width=True, config={
-                    'scrollZoom': True,
-                    'displayModeBar': True,
-                    'modeBarButtonsToAdd': [
-                        'pan2d',
-                        'zoomIn2d',
-                        'zoomOut2d',
-                        'resetScale2d'
-                    ]
-                })
+        
+        with tab3:
+            display_cv_analysis(df, db)
+        
+        with tab5:
+            if reverse_results:
+                display_cell_processing(
+                    cell_counts_waterfall,
+                    starting_cells,
+                    target_population=reverse_results.get("target_population"),
+                    db=db
+                )
             else:
-                # Create a container with scrollable content
-                st.markdown("""
-                <style>
-                .tree-container {
-                    max-height: 800px;
-                    overflow-y: auto;
-                    font-family: monospace;
-                    white-space: nowrap;
-                    padding: 10px;
-                    background-color: #f5f5f5;
-                    border-radius: 5px;
-                    color: #000000;  /* Set text color to black for visibility */
-                }
-                </style>
-                """, unsafe_allow_html=True)
-                
-                html = create_text_tree(cell_counts, db)
-                st.markdown(html, unsafe_allow_html=True)
-            
-            display_cv_legend()
-    
-    with tab3:
-        display_cv_analysis(df, db)
-    
-    with tab4:
-        if st.session_state.analysis_mode == "Forward":
-            display_cell_distribution(df, input_cells)
-        else:
-            st.info("Cell distribution view is only available in Forward Analysis mode")
-    
-    with tab5:
-        if st.session_state.analysis_mode == "Reverse" and reverse_results:
-            display_cell_processing(
-                cell_counts_waterfall,
-                starting_cells,
-                target_population=reverse_results.get("target_population"),
-                db=db
-            )
-        else:
-            display_cell_processing(cell_counts_waterfall, starting_cells)
+                display_cell_processing(cell_counts_waterfall, starting_cells)
 
 if __name__ == "__main__":
     main()
