@@ -389,15 +389,13 @@ def main():
             "Cell Processing"
         ])
     else:
-        # Show focused tabs for reverse mode
-        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        # Show only relevant tabs for reverse mode
+        tab1, tab3, tab5 = st.tabs([
             "Required Cells Summary",
-            "Tree View",  # Keep the tab but hide content if in reverse mode
             "CV Analysis",
-            "Cell Distribution",  # Keep the tab but hide content if in reverse mode
             "Cell Processing"
         ])
-    
+
     if st.session_state.analysis_mode == "Forward":
         with tab1:
             display_table_view(df, input_cells)
@@ -504,8 +502,6 @@ def main():
                 st.markdown(html, unsafe_allow_html=True)
             
             display_cv_legend()
-        else:
-            st.info("Tree view is only available in Forward Analysis mode")
     
     with tab3:
         display_cv_analysis(df, db)
