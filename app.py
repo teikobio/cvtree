@@ -114,7 +114,8 @@ def main():
             options=["Forward", "Reverse"],
             format_func=lambda x: "I want to calculate population counts from input cell amounts" if x == "Forward" 
                             else "I want to determine required input cells for a target population and CV",
-            horizontal=False  # Stack vertically
+            horizontal=False,  # Stack vertically
+            help="Forward: Start with your input cells and calculate expected cell counts, CV values, and processing efficiency impact.\nReverse: Start with your target population and specify desired CV, calculate required input cells, and optimize processing parameters."
         )
         
         # Add some spacing
@@ -125,22 +126,6 @@ def main():
             st.session_state.mode_selected = True
             st.session_state.analysis_mode = mode_choice
             st.rerun()
-        
-        # Add descriptions below
-        if mode_choice == "Forward":
-            st.markdown("""
-            Start with your input cells and calculate:
-            - Expected cell counts for each population
-            - CV values and quality assessment
-            - Processing efficiency impact
-            """)
-        else:
-            st.markdown("""
-            Start with your target population and:
-            - Specify desired CV
-            - Calculate required input cells
-            - Optimize processing parameters
-            """)
         
         # Add about section at the bottom of splash screen as regular text
         st.markdown("""
