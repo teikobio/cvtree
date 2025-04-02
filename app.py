@@ -89,7 +89,7 @@ def main():
     st.set_page_config(
         page_title="Flow Cytometry Cell Population Calculator",
         page_icon="🔬",
-        layout="wide",
+        layout="centered",
         initial_sidebar_state="expanded"
     )
 
