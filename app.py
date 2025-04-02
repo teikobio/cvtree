@@ -447,9 +447,8 @@ def main():
 
     else:
         # Show only relevant tabs for reverse mode
-        tab1, tab3, tab5 = st.tabs([
+        tab1, tab5 = st.tabs([
             "Required Cells Summary",
-            "CV Analysis",
             "Cell Processing"
         ])
 
@@ -510,9 +509,6 @@ def main():
             else:
                 # Handle case where reverse_results might not be ready (e.g., initial load)
                 st.info("Select target population and CV in the sidebar to see the summary.")
-        
-        with tab3:
-            display_cv_analysis(df, db)
         
         with tab5:
             if reverse_results:
