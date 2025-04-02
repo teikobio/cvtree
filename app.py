@@ -108,15 +108,27 @@ def main():
         # Create a container for the mode selection and button
         mode_container = st.container()
         
+        st.write("Choose your analysis mode:")
+        
+        # Create columns for radio button and help text
+        col1, col2 = st.columns([10, 1])
+        
         # Radio selection with simple vertical layout
-        mode_choice = st.radio(
-            "Choose your analysis mode:",
-            options=["Forward", "Reverse"],
-            format_func=lambda x: "I want to calculate population counts from input cell amounts" if x == "Forward" 
-                            else "I want to determine required input cells for a target population and CV",
-            horizontal=False,  # Stack vertically
-            help="Forward: Start with your input cells and calculate expected cell counts, CV values, and processing efficiency impact.\nReverse: Start with your target population and specify desired CV, calculate required input cells, and optimize processing parameters."
-        )
+        with col1:
+            mode_choice = st.radio(
+                "",  # Empty label since we put it above
+                options=["Forward", "Reverse"],
+                format_func=lambda x: "I want to calculate population counts from input cell amounts" if x == "Forward" 
+                                else "I want to determine required input cells for a target population and CV",
+                horizontal=False,  # Stack vertically
+                label_visibility="collapsed"  # Hide the empty label
+            )
+        
+        with col2:
+            st.write("")  # Add spacing to align with first radio button
+            st.help("Start with your input cells and calculate expected cell counts, CV values, and processing efficiency impact")
+            st.write("")  # Add spacing to align with second radio button
+            st.help("Start with your target population and specify desired CV, calculate required input cells, and optimize processing parameters")
         
         # Add some spacing
         st.write("")
