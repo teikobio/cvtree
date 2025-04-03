@@ -9,18 +9,11 @@ def display_table_view(df, input_cells):
     """Display the table view with cell counts and CV data"""
     st.subheader("Estimated Cell Counts and CV")
     
-    # Filter controls
-    col1, col2 = st.columns(2)
-    with col1:
-        min_cv = st.slider("Min CV (%)", 0.0, 50.0, 0.0)
-    with col2:
-        max_cv = st.slider("Max CV (%)", 0.0, 50.0, 50.0)
+    # Filter control - only max CV
+    max_cv = st.slider("Maximum CV (%)", 0.0, 50.0, 50.0, help="Filter to show only populations with CV below this value")
     
-    # Apply filters
-    filtered_df = df[
-        (df["CV Value"] >= min_cv) & 
-        (df["CV Value"] <= max_cv)
-    ].sort_values(by="CV Value")
+    # Apply filter
+    filtered_df = df[df["CV Value"] <= max_cv].sort_values(by="CV Value")
     
     # Display columns needed for the table view
     display_df = filtered_df[["Population", "Parent", "Cell Count", "% of Parent", "CV (%)", "CV Quality"]]
