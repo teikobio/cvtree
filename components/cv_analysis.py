@@ -10,12 +10,11 @@ def display_cv_analysis(df, db):
     """Display the CV analysis view"""
     st.subheader("CV Analysis")
     
-    # Filter for leaf nodes (populations with no children)
-    leaf_nodes = [cell for cell in db.get_hierarchy() if not db.get_children(cell)]
-    leaf_df = df[df["Population"].isin(leaf_nodes)].sort_values(by="CV Value")
+    # Sort all populations by CV Value
+    sorted_df = df.sort_values(by="CV Value")
     
     # Create and display the CV bar chart
-    fig = create_cv_bar_chart(leaf_df)
+    fig = create_cv_bar_chart(sorted_df)
     st.plotly_chart(fig, use_container_width=True)
     
     # Show table of populations with poor CV

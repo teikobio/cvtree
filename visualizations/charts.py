@@ -7,14 +7,14 @@ import plotly.express as px
 import plotly.graph_objects as go
 from config.settings import CHART_HEIGHT, GAUGE_HEIGHT
 
-def create_cv_bar_chart(leaf_df):
-    """Create a bar chart of CVs for leaf populations"""
+def create_cv_bar_chart(df):
+    """Create a bar chart of CVs for all cell populations"""
     fig = px.bar(
-        leaf_df,
+        df,
         x="Population",
         y="CV Value",
         color="CV Quality",
-        title="Coefficient of Variation by Cell Population (Leaf Nodes Only)",
+        title="Coefficient of Variation by Cell Population",
         labels={"CV Value": "Coefficient of Variation (%)"},
         hover_data=["Cell Count", "% of Parent"]
     )
