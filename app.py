@@ -438,7 +438,9 @@ def main():
                 - **Population Frequency:** {pop_freq:.4%}
 
                 ### Required Numbers
-                - **Events Needed:** {req_events:,}
+                - **Events Needed:**
+                  - Target Population Events: {reverse_results.get("target_events_required", 0):,}
+                  - Total Events: {reverse_results.get("total_events_needed", 0):,}
                 - **Input Cells Needed (Pre-Stain):** {req_input:,}
                 """)
 
