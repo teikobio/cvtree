@@ -72,9 +72,13 @@ def calculate_cell_counts(input_cells, hierarchy=None):
             parent_count = cell_counts[node]
             
             for child in hierarchy[node]["children"]:
-                # Calculate cell count based on proportion of parent
-                child_proportion = hierarchy[child]["proportion"]
-                cell_counts[child] = parent_count * child_proportion
+                # Get child's proportion relative to its parent
+                child_absolute_proportion = hierarchy[child]["proportion"]
+                parent_absolute_proportion = hierarchy[node]["proportion"] if hierarchy[node]["proportion"] > 0 else 1.0
+                child_parent_relative_proportion = child_absolute_proportion / parent_absolute_proportion
+                
+                # Calculate cell count based on parent-relative proportion
+                cell_counts[child] = parent_count * child_parent_relative_proportion
                 
                 # Recursively calculate for this child's children
                 calculate_children(child)
@@ -348,7 +352,8 @@ def main():
         parent_count = cell_counts[parent] if parent else None
         
         cv = calculate_cv(count)
-        frequency = (count / parent_count if parent_count else 1.0) * 100
+        # Calculate frequency relative to immediate parent
+        frequency = (count / parent_count * 100) if parent_count and parent_count > 0 else 100.0
         
         results.append({
             "Population": cell_type,
