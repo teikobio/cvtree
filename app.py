@@ -91,7 +91,7 @@ def calculate_cell_counts(input_cells, hierarchy=None):
 def main():
     st.set_page_config(
         page_title="Flow Cytometry Cell Population Calculator",
-        page_icon="🔬",
+        page_icon=".streamlit/favicon.ico",
         layout="centered",
         initial_sidebar_state="expanded"
     )
