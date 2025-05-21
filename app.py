@@ -174,38 +174,6 @@ def main():
     # Title and description
     st.title("Flow Cytometry Cell Population Calculator")
     
-    with st.expander("About this app", expanded=False):
-        st.markdown("""
-        This app estimates the number of cells in each population based on the initial input cell count
-        and calculates the expected coefficient of variation (CV) using Keeney's formula: r = (100/CV)².
-        
-        **Key features:**
-        - Enter any input cell count (starting from 10K)
-        - View estimated cell counts for each population in the hierarchy
-        - Analyze expected CV for each population
-        - Identify populations with potentially unreliable measurements (high CV)
-        
-        **Implementation Notes:**
-        - Population hierarchy and frequencies are based on [Teiko's 25-marker PBMC spectral flow panel](https://teiko.bio/pbmc-spectral-flow/)
-        - CV calculations are theoretical estimates using Keeney's formula and may differ from actual experimental values
-        - The app is intended as a planning tool and should be validated against your specific experimental conditions
-        
-        **References:**
-        - Keeney et al. ["Technical issues: flow cytometry and rare event analysis"](https://onlinelibrary.wiley.com/doi/10.1111/ijlh.12068)
-        - [Teiko PBMC Spectral Flow Panel](https://teiko.bio/pbmc-spectral-flow/)
-        """)
-        
-        # Add feedback button in expander too
-        st.divider()
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.markdown("""
-            **Have feedback or found a bug?**  
-            We're constantly improving this tool and would love to hear from you!
-            """)
-        with col2:
-            st.link_button("📧 Send Feedback", "mailto:info@teiko.bio?subject=Feedback%20on%20Cytometry%20CV%2FPopulation%20counter", help="Send us an email with your feedback or bug report")
-    
     # Sidebar controls
     with st.sidebar:
         st.header("Input Settings")
