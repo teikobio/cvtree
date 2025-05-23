@@ -1,4 +1,13 @@
-include .env
+define get-ecr-info
+	$(eval ECR_ACCOUNT_ID := $(shell aws sts get-caller-identity --query "Account" --output text --profile=default))
+	$(eval AWS_REGION := $(shell aws configure get region --profile=default))
+	$(eval ECR_REPOSITORY_URL := $(ECR_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com)
+endef
+
+# Login to ECR
+define ecr-login
+	aws ecr get-login-password --region $(AWS_REGION) --profile=default | docker login --username AWS --password-stdin $(ECR_REPOSITORY_URL)
+endef
 
 build:
 	docker build -t flow-cytometry-calculator .
@@ -6,18 +15,25 @@ build:
 run:
 	docker run -p 8501:8501 flow-cytometry-calculator
 
-publish:
-	aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin $(ECR_REPOSISTORY_URL)
-	
+publish-to-ecr:
+	$(call get-ecr-info)
+	$(call ecr-login)
+
 	docker buildx build \
 		--platform linux/amd64 \
-		-t $(ECR_REPOSISTORY_URL)/$(ECR_REPOSISTORY_NAME):latest \
-		-t $(ECR_REPOSISTORY_URL)/$(ECR_REPOSISTORY_NAME):$(shell git rev-parse --short HEAD) \
+		-t $(ECR_REPOSITORY_URL)/cv-tree-teiko-bio:latest \
+		-t $(ECR_REPOSITORY_URL)/cv-tree-teiko-bio:$(shell git rev-parse --short HEAD) \
 		--push \
 		. 
 
 redeploy-ecs:
 	aws ecs update-service \
-		--cluster $(ECS_CLUSTER_NAME) \
-		--service $(ECS_SERVICE_NAME) \
-		--force-new-deployment
+		--cluster cv-tree-teiko-bio \
+		--service cv-tree-teiko-bio \
+		--force-new-deployment \
+		--output table > /dev/null
+
+publish-app:
+	aws sso login
+	make publish-to-ecr
+	make redeploy-ecs
