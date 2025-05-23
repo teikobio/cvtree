@@ -45,6 +45,14 @@ from visualizations.tree_view import create_text_tree, display_cv_legend
 # Initialize the cell database
 db = CellHierarchyDB()
 
+def format_sigfigs(n):
+    if n >= 1e6:
+        return f"{n/1e6:.3g}M"
+    elif n >= 1e3:
+        return f"{n/1e3:.3g}K"
+    else:
+        return str(n)
+
 def calculate_cell_counts(input_cells, hierarchy=None):
     """
     Calculate cell counts for each population based on input cells and hierarchy
@@ -115,7 +123,7 @@ def main():
         mode_choice = st.radio(
             "Choose your analysis mode:",
             options=["Forward", "Reverse"],
-            format_func=lambda x: "I want to calculate population counts from input cell amounts" if x == "Forward" 
+            format_func=lambda x: "I want to calculate population counts from blood volume" if x == "Forward" 
                             else "I want to determine required input cells for a target population and CV",
             horizontal=False,  # Stack vertically
             help="Forward: Start with your input cells and calculate expected cell counts, CV values, and processing efficiency impact.\nReverse: Start with your target population and specify desired CV, calculate required input cells, and optimize processing parameters."
@@ -174,48 +182,21 @@ def main():
     # Title and description
     st.title("Flow Cytometry Cell Population Calculator")
     
-    with st.expander("About this app", expanded=False):
-        st.markdown("""
-        This app estimates the number of cells in each population based on the initial input cell count
-        and calculates the expected coefficient of variation (CV) using Keeney's formula: r = (100/CV)².
-        
-        **Key features:**
-        - Enter any input cell count (starting from 10K)
-        - View estimated cell counts for each population in the hierarchy
-        - Analyze expected CV for each population
-        - Identify populations with potentially unreliable measurements (high CV)
-        
-        **Implementation Notes:**
-        - Population hierarchy and frequencies are based on [Teiko's 25-marker PBMC spectral flow panel](https://teiko.bio/pbmc-spectral-flow/)
-        - CV calculations are theoretical estimates using Keeney's formula and may differ from actual experimental values
-        - The app is intended as a planning tool and should be validated against your specific experimental conditions
-        
-        **References:**
-        - Keeney et al. ["Technical issues: flow cytometry and rare event analysis"](https://onlinelibrary.wiley.com/doi/10.1111/ijlh.12068)
-        - [Teiko PBMC Spectral Flow Panel](https://teiko.bio/pbmc-spectral-flow/)
-        """)
-        
-        # Add feedback button in expander too
-        st.divider()
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.markdown("""
-            **Have feedback or found a bug?**  
-            We're constantly improving this tool and would love to hear from you!
-            """)
-        with col2:
-            st.link_button("📧 Send Feedback", "mailto:info@teiko.bio?subject=Feedback%20on%20Cytometry%20CV%2FPopulation%20counter", help="Send us an email with your feedback or bug report")
-    
     # Sidebar controls
     with st.sidebar:
         st.header("Input Settings")
         
         # Replace mode display and reset button with radio buttons
+        mode_labels = {
+            "Forward": "Start with blood volume",
+            "Reverse": "Start with a cell population and CV target"
+        }
+
         st.session_state.analysis_mode = st.radio(
             "Analysis Mode",
             ["Forward", "Reverse"],
             index=0 if st.session_state.analysis_mode == "Forward" else 1,
-            format_func=lambda x: f"{x} Analysis",
+            format_func=lambda x: mode_labels[x],
             help="Choose whether to calculate population counts from input cells, or determine required input cells for a target CV"
         )
         
@@ -223,14 +204,31 @@ def main():
         if st.session_state.analysis_mode == "Forward":
             # Show Sample Processing before Processing Efficiency in Forward mode
             st.subheader("Sample Processing")
-            starting_cells = st.number_input(
-                "Absolute number of cells in blood (per ml):",
-                min_value=MIN_STARTING_CELLS,
-                value=DEFAULT_STARTING_CELLS,
-                step=STEP_STARTING_CELLS,
-                format="%d",
-                help="Typical value: 4-6 million cells/ml from healthy donor"
+
+            # User enters only the blood volume
+            blood_volume_ml = st.number_input(
+                "Volume of blood (mL):",
+                min_value=0.1,
+                value=4.0,
+                step=0.1,
+                help="Enter the amount of blood to process"
             )
+
+            # Fixed WBC range
+            WBC_PER_UL_MIN = 4500
+            WBC_PER_UL_MAX = 11000
+
+            blood_volume_ul = blood_volume_ml * 1000
+            min_cells = int(blood_volume_ul * WBC_PER_UL_MIN)
+            max_cells = int(blood_volume_ul * WBC_PER_UL_MAX)
+            avg_cells = int((min_cells + max_cells) / 2)
+
+            st.markdown(
+                f"**Estimated total Cells:** {format_sigfigs(avg_cells)} (average of {format_sigfigs(min_cells)} – {format_sigfigs(max_cells)} for {blood_volume_ml:.2f} mL of blood)"
+            )
+
+            # Use the average for all downstream calculations
+            starting_cells = avg_cells
         elif st.session_state.analysis_mode == "Reverse":
             # Call the dedicated component function for Reverse Analysis settings
             reverse_results = display_reverse_analysis_sidebar(db)
